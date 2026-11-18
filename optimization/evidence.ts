@@ -1,5 +1,3 @@
-import { join } from "node:path";
-import { CURVE_DIR } from "../curve2/curve.ts";
 import { canonical, nonnegative, type Constraint, type Contract, type GateStatus,
   type Measurement, type Receipt, type Request, type Role } from "./model.ts";
 
@@ -12,8 +10,10 @@ interface GateModule {
   rankable(gate: NativeGate, objectivesComplete: boolean): boolean;
 }
 
+// Resolved beside this file, not through curve2: importing curve2 here would
+// load it unpatched into any process that also runs curve-lint.
 const { default: { verdict, rankable } } = await import(
-  join(CURVE_DIR, "..", "optimization", "gate.curve")
+  new URL("./gate.curve", import.meta.url).href
 ) as { default: GateModule };
 
 export interface Outcome {

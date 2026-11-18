@@ -68,6 +68,7 @@ GitHub rejected issue creation because Issues is disabled. The native evaluator 
 
 - Curve uses `.curve` for new sources and accepts legacy `.bend` imports. Keep paired LAWS and PROOF extensions aligned.
 - The optimizer relies on trusted domain evaluators and the declared fidelity for its decisions. A passing provisional simulation has a separate scope from physical qualification.
+- One `bun test` process shares modules across files. curve-lint patches curve2 as Bun loads it, so no other test-imported module may import `curve2/*.ts` before it. Load paths beside the file instead (`optimization/evidence.ts` uses `import.meta.url`). A root `bun test` still fails `optimization/` without the `--preload ./curve2/main.ts` loader, and `--preload` would break curve-lint, so run those suites separately.
 - The source installer requires Bun and ignores working-directory Bun configuration and dotenv files. This checkout also retains pre-existing compiler and tooling files above 600 lines. New optimization modules are below that cap.
 
 ## Decisions
