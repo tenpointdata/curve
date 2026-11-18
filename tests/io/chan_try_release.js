@@ -5,15 +5,15 @@ function chan_release_run(action) {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-chan-release-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-chan-release-"));
   try {
     const output = path.join(dir, "probe.cjs");
     const compiled = Bun.main.startsWith("/$bunfs/");
     const built = child.spawnSync(process.execPath,
-      [...compiled ? [] : [path.resolve("bend2/main.ts")],
-        path.resolve("tests/io/chan_try_release.bend"), "-o", output], {
+      [...compiled ? [] : [path.resolve("curve2/main.ts")],
+        path.resolve("tests/io/chan_try_release.curve"), "-o", output], {
         encoding: "utf8", timeout: 3000,
-        env: { ...process.env, BEND_NO_TELEMETRY: "1" },
+        env: { ...process.env, CURVE_NO_TELEMETRY: "1" },
       });
     if (built.status !== 0) {
       throw built.error ?? new Error(built.stderr);

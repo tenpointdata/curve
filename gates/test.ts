@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 // Runs every test under tests/ on the cluster. The tests split into one
 // shard per live mini; each shard is an aggregator that imports its tests,
-// sent to its mini, which checks and interprets every module through `bend
-// main.bend --checkup`, builds each runnable test alone (`bend t.bend -o t.js
+// sent to its mini, which checks and interprets every module through `curve
+// main.curve --checkup`, builds each runnable test alone (`curve t.curve -o t.js
 // -o t`: clang -O3, Metal; ten at a time), launches each new binary once
 // (`+RTS --help`, unless its `!` build left t.gpu) so the timed runs skip
 // macOS's first-exec check, runs each binary with a `!` once
@@ -19,8 +19,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import * as Bend from "../bend2/bend.ts";
-import * as Comp from "../bend2/comp.ts";
+import * as Curve from "../curve2/curve.ts";
+import * as Comp from "../curve2/comp.ts";
 import * as lib from "./_lib";
 
 // Types
@@ -53,7 +53,7 @@ const FAILS = /^(SOME PROOFS FAIL|Error:)/;
 // Each shard's raw output, for a failure's post-mortem: one fresh directory
 // per gate (logs_open), so two gates at once keep their own, printed when
 // the run fails; a day's old ones are swept.
-const LOG_ROOT = "/tmp/bend-test";
+const LOG_ROOT = "/tmp/curve-test";
 let LOGS = "";
 
 // Test
@@ -69,7 +69,7 @@ function test_read(dir: string, file: string): Test {
   // it checks and interprets alone.
   const lanes = ["js", "c"].filter((l) => /^(?:[\t\r ]*(?:(?:#|import[\t ])[^\n]*)?\n)*[\t ]*import[\t ]+Base(?=[\t\r ]*(?:#|\n|$))/.test(src)
     && (effs.length === 0 || effs.includes(l)));
-  return { name: dir + "_" + path.basename(file, ".bend"), src,
+  return { name: dir + "_" + path.basename(file, ".curve"), src,
     want: tidy(want), main: /^(def|law) main(\(|:)/m.test(src), lanes };
 }
 
@@ -78,7 +78,7 @@ function tidy(text: string): string {
 }
 
 function test_path(t: Test): string {
-  return t.name.replace("_", "/") + ".bend";
+  return t.name.replace("_", "/") + ".curve";
 }
 
 // a test that fails: its check (SOME PROOFS FAIL) or its program (Error:)
@@ -149,19 +149,19 @@ function shard_script(shard: Test[], tag: number): string {
     `cat > ${name} <<'${MARK}'\n${text}${MARK}\n`;
   const sweep = `find /tmp/ -maxdepth 1 -user $(id -u) \\( -name 'bend_t_*'`
     + ` -o -name 'bend_io_*' -o -name 'bend_gfx_*' \\) -mmin +60 -delete`
-    + ` 2>/dev/null; find $HOME/bend-test -mindepth 1 -maxdepth 1 -mmin +1440`
+    + ` 2>/dev/null; find $HOME/curve-test -mindepth 1 -maxdepth 1 -mmin +1440`
     + ` -exec rm -rf {} + 2>/dev/null;`;
   const probe = (kind: string, cmd: string): string =>
     `echo "${MARK} ${kind} $m"; perl -e 'alarm 5; exec @ARGV' ${cmd} 2>&1;`
     + ` echo "${MARK} exit $?";`;
-  return `export BUN_JSC_maxPerThreadStackUsage=33554432; unset BENDRTS;`
-    + ` mkdir -p $HOME/bend-test`
-    + ` && d=$(mktemp -d $HOME/bend-test/${tag}.XXXXXX) && cd "$d" || exit 1;`
+  return `export BUN_JSC_maxPerThreadStackUsage=33554432; unset CURVERTS;`
+    + ` mkdir -p $HOME/curve-test`
+    + ` && d=$(mktemp -d $HOME/curve-test/${tag}.XXXXXX) && cd "$d" || exit 1;`
     + ` tar -xzf -; touch "$d";`
     + ` ${sweep}\n`
-    + file("main.bend", main) + file("build.txt", build)
-    + ` echo "${MARK} checkup"; ${BUN} bend2/main.ts main.bend --checkup 2>&1;`
-    + ` xargs -P 10 -L 1 sh -c 'm=$1; shift; ${BUN} bend2/main.ts "$@"`
+    + file("main.curve", main) + file("build.txt", build)
+    + ` echo "${MARK} checkup"; ${BUN} curve2/main.ts main.curve --checkup 2>&1;`
+    + ` xargs -P 10 -L 1 sh -c 'm=$1; shift; ${BUN} curve2/main.ts "$@"`
     + ` > $m.left 2>&1 && rm $m.left; [ ! -x $m ] || [ -f $m.gpu ]`
     + ` || perl -e "alarm 5; exec @ARGV" ./$m +RTS --help >/dev/null 2>&1'`
     + ` -- < build.txt;`
@@ -182,7 +182,7 @@ function shard_parse(shard: Test[], out: string): Map<string, Got> {
     const head = part.slice(0, nl).trim().split(" ");
     const body = part.slice(nl + 1);
     if (head[0] === "checkup") {
-      const secs = body.split(/^--- \.\/tests\/([A-Za-z0-9_/]+)\.bend ---\n/m);
+      const secs = body.split(/^--- \.\/tests\/([A-Za-z0-9_/]+)\.curve ---\n/m);
       for (let i = 1; i + 1 < secs.length; i += 2) {
         const got = gots.get(secs[i].replace("/", "_"));
         if (got !== undefined) {
@@ -232,10 +232,10 @@ async function comptime_run(): Promise<Fail[]> {
   const fail = (probe: string, want: string, got: string): Fail[] =>
     [{ name: "comptime_tmpl", probe, want, got }];
   const emit = async (file: string): Promise<string> => {
-    const book = Bend.book_nil();
-    await Bend.book_load(book, path.join(TESTS, "comptime", file + ".bend"),
+    const book = Curve.book_nil();
+    await Curve.book_load(book, path.join(TESTS, "comptime", file + ".curve"),
       "", new Map());
-    Bend.book_valid(book);
+    Curve.book_valid(book);
     return Comp.compile_book(book);
   };
   // main awaits this only after the shards, so a twin that fails to check
@@ -277,17 +277,17 @@ async function state_run(): Promise<Fail[]> {
   const fails = await comptime_run();
   const files = ["reg/borrow_loop", "run/harness_cache_compile",
     "run/harness_cache_purity", "run/harness_cache_stats"];
-  const books: Bend.Book[][] = [];
+  const books: Curve.Book[][] = [];
   for (const file of files) {
-    const copies = [Bend.book_nil(), Bend.book_nil()];
+    const copies = [Curve.book_nil(), Curve.book_nil()];
     for (const book of copies) {
-      await Bend.book_load(book, path.join(TESTS, file + ".bend"), "",
+      await Curve.book_load(book, path.join(TESTS, file + ".curve"), "",
         new Map());
-      Bend.book_valid(book);
+      Curve.book_valid(book);
     }
     books.push(copies);
   }
-  const emit = (book: Bend.Book, lane: string): string =>
+  const emit = (book: Curve.Book, lane: string): string =>
     Bun.hash(lane === "c" ? Comp.compile_book(book) : Comp.js_book(book))
     + " bytes, " + String(Comp.PROBES.length) + " probes";
   const base = books.map(([book]): Record<string, string> =>
@@ -299,7 +299,7 @@ async function state_run(): Promise<Fail[]> {
       if (step === "snf") {
         for (const def of Object.values(book.tlds)) {
           if (def.$ === "Def" && def.v !== null) {
-            Bend.term_snf(book, def.v);
+            Curve.term_snf(book, def.v);
           }
         }
         continue;
@@ -336,7 +336,7 @@ function logs_open(): void {
 
 if (import.meta.main) {
   const tests = fs.readdirSync(TESTS).sort().flatMap((dir) =>
-    fs.readdirSync(path.join(TESTS, dir)).filter((f) => f.endsWith(".bend"))
+    fs.readdirSync(path.join(TESTS, dir)).filter((f) => f.endsWith(".curve"))
       .sort().map((f) => test_read(dir, f)));
   const state = state_run();
   logs_open();

@@ -1,4 +1,4 @@
-// Native TS translation of main.bend: k-means with random
+// Native TS translation of main.curve: k-means with random
 // restarts; stats trees live in a typed-array arena (u32 indices,
 // same representation as the C twin).
 const STATS_LEAF = 0,

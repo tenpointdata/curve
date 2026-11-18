@@ -1,9 +1,9 @@
--- Single-threaded Lean twin of main.bend. Same
+-- Single-threaded Lean twin of main.curve. Same
 -- algorithm, same shape: 4-row prefix decode + bitmask legality, then
 -- the bitmask backtracker over the remaining rows threading per-branch
--- Stats{sols, nodes}; the Bend fork tree's smerge reduction is a plain
+-- Stats{sols, nodes}; the Curve fork tree's smerge reduction is a plain
 -- fold over the prefix index space. All UInt32. Same recursive
--- backtracker as the Bend bench.
+-- backtracker as the Curve bench.
 -- Checksum = (sols * 2654435761) ^^^ nodes.
 -- Expected at boardSize=17, prefixLimit=11730: 2063750025
 -- (boardSize=8, prefixLimit=512: 2027808349).

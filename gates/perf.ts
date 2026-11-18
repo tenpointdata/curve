@@ -2,13 +2,13 @@
 // Runs the benchmarks on the cluster: every runtime bench in each of its
 // three modes on its own mini (48 cells), plus the five checker benches,
 // and draws one fixed screen with each measure beside its ratio to the
-// pin. A runtime cell runs `bend main.bend -o main` twice and times the
+// pin. A runtime cell runs `curve main.curve -o main` twice and times the
 // second for the COMPILER column (the first build on a node after a
 // pause pays the cold compiler service and module cache: 0.95 s against
 // 0.62 for bfs), then asks for the C alone (`-o main.c`: a plain `-o`
 // emits into a temp dir and drops it) and builds that with the cc line (the
-// -O3 of bend -o: no -lm, no -fmodules, no -fno-slp-vectorize, so the
-// gate grades the binary bend builds) and runs it with the flags the
+// -O3 of curve -o: no -lm, no -fmodules, no -fno-slp-vectorize, so the
+// gate grades the binary curve builds) and runs it with the flags the
 // pins were measured with (PAR on the power of two under the core
 // count, GPU over the bench's span), one warm run and one timed, or three
 // and their median when the warm run took under SHORT (a 60 ms GPU cell
@@ -64,7 +64,7 @@ export const MODES = ["SEQ-CPU", "PAR-CPU", "PAR-GPU"];
 export const CC = "cc -std=c11 -O3";
 
 export const BUILD = [CC + " main.c -lpthread", CC + " main.c -lpthread",
-  CC + " -DBEND_METAL=1 -x objective-c -fobjc-arc main.c -lpthread"
+  CC + " -DCURVE_METAL=1 -x objective-c -fobjc-arc main.c -lpthread"
   + " -framework Metal -framework Foundation"];
 
 const THREADS = "nt=1; while [ $nt -lt $(getconf _NPROCESSORS_ONLN) ] &&"
@@ -264,12 +264,12 @@ function pin_write(cells: Cell[], chks: Chk[]): void {
 // bench out of it.
 function cell_script(c: Cell): string {
   const run = "./cell " + FLAGS[c.mode].replace("$gm", MEMORY[c.bench] ?? "on");
-  const src = "runtime/" + c.bench + "/main.bend";
-  return `d=$HOME/bend-perf/${c.bench}-${String(c.mode)}; rm -rf $d;`
-    + ` mkdir -p $d; cd $d; tar -xzf -; ${THREADS} ${lib.BUN} bend2/main.ts`
+  const src = "runtime/" + c.bench + "/main.curve";
+  return `d=$HOME/curve-perf/${c.bench}-${String(c.mode)}; rm -rf $d;`
+    + ` mkdir -p $d; cd $d; tar -xzf -; ${THREADS} ${lib.BUN} curve2/main.ts`
     + ` ${src} -o main > /dev/null 2>&1; t0=$(${CLOCK}); ${lib.BUN}`
-    + ` bend2/main.ts ${src} -o main > build.txt 2>&1; b=$?;`
-    + ` t1=$(${CLOCK}); [ $b = 0 ] && { ${lib.BUN} bend2/main.ts ${src}`
+    + ` curve2/main.ts ${src} -o main > build.txt 2>&1; b=$?;`
+    + ` t1=$(${CLOCK}); [ $b = 0 ] && { ${lib.BUN} curve2/main.ts ${src}`
     + ` -o main.c >> build.txt 2>&1 && ${BUILD[c.mode]} -o cell >> build.txt`
     + ` 2>&1; b=$?; }; echo "${MARK} built $b $t0 $t1"; cat build.txt;`
     + ` if [ $b = 0 ]; then cat > tm.c <<'TM'\n${TM}\nTM\n ${CC} tm.c -o tm`
@@ -319,9 +319,9 @@ async function cell_run(c: Cell, node: number, pack: Buffer): Promise<void> {
 
 // A checker bench is megabytes of source, so each ships in its own pack.
 async function chk_run(c: Chk, node: number): Promise<void> {
-  const script = `d=$HOME/bend-perf/chk-${c.bench}; rm -rf $d; mkdir -p $d;`
+  const script = `d=$HOME/curve-perf/chk-${c.bench}; rm -rf $d; mkdir -p $d;`
     + ` cd $d; tar -xzf -; for i in 1 2 3; do t0=$(${CLOCK}); ${lib.BUN}`
-    + ` bend2/main.ts ${c.bench}/main.bend > out.txt 2>&1; e=$?;`
+    + ` curve2/main.ts ${c.bench}/main.curve > out.txt 2>&1; e=$?;`
     + ` t1=$(${CLOCK}); echo "${MARK} check $e $t0 $t1"; cat out.txt; done;`
     + ` cd; rm -rf $d`;
   const got = await lib.ssh(node, script,

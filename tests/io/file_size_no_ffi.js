@@ -4,7 +4,7 @@ let ffi_real = undefined;
 
 function ffi_absent_run() {
   ffi_real = io_sys();
-  globalThis.BEND_SYS = new Proxy(ffi_real, {
+  globalThis.CURVE_SYS = new Proxy(ffi_real, {
     get() {
       throw new Error("no ffi table on this host");
     },
@@ -13,7 +13,7 @@ function ffi_absent_run() {
 }
 
 function ffi_back_run() {
-  globalThis.BEND_SYS = ffi_real;
+  globalThis.CURVE_SYS = ffi_real;
   return { $: CID(Unit) };
 }
 

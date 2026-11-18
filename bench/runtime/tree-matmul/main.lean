@@ -1,4 +1,4 @@
--- Native Lean twin of main.bend: recursive block matrix multiply over
+-- Native Lean twin of main.curve: recursive block matrix multiply over
 -- quad-trees with a Freivalds verification pass. Same datatypes, algorithms
 -- and wrapping-u32 numerics (UInt32 throughout; counters are Nat).
 inductive Mat where
@@ -85,7 +85,7 @@ def round_run (d : Nat) (s : UInt32) : UInt32 :=
   (k ^^^ (s * 2654435761)) + (if v = 0 then 1 else 0)
 
 -- batch over the round index space: round i runs on seed = hashed index
--- (u32 addition commutes, so the tail loop equals the Bend fork tree)
+-- (u32 addition commutes, so the tail loop equals the Curve fork tree)
 def batch_run (nchain : Nat) (d : Nat) : UInt32 := Id.run do
   let mut acc : UInt32 := 0
   for i in [0:nchain] do

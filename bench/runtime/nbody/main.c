@@ -1,10 +1,10 @@
-// Native C translation of main.bend: chaotic three-body ensemble,
+// Native C translation of main.curve: chaotic three-body ensemble,
 // f32, Plummer-softened, symplectic Euler; 2^(SY+3) seeded systems, ST
 // steps each; checksum mixes the outcome histogram and digest sum.
-// One C function per Bend function; Bend's fl(n,d) rationals appear as
+// One C function per Curve function; Curve's fl(n,d) rationals appear as
 // the equal f32 literals, b2u/sel as the ternary they encode.
 // Build: cc -O3 main.c -lm. Expected at SY=17, ST=300: 3516450380 with
-// -ffp-contract=off (Bend's uncontracted f32 bits); plain -O3 fuses
+// -ffp-contract=off (Curve's uncontracted f32 bits); plain -O3 fuses
 // a*b+c into fma and prints 1424365735.
 #include <math.h>
 #include <stdint.h>

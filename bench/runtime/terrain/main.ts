@@ -1,4 +1,4 @@
-// Native TypeScript twin of main.bend: procedural terrain tile
+// Native TypeScript twin of main.curve: procedural terrain tile
 // pipeline. Same value-noise fill, in-place Gauss-Seidel relaxation sweeps
 // with pass-salted roughening, 64-bin histogram and position-weighted
 // folds, wrapping-u32 numerics (imul + >>>0; heightmaps are Uint32Arrays).

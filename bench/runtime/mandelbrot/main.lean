@@ -1,4 +1,4 @@
--- Native Lean translation of main.bend: histogram-equalized
+-- Native Lean translation of main.curve: histogram-equalized
 -- escape-time render, 4096x4096, signed 8.8 fixed point, ITERS
 -- branchless iterations per pixel (z freezes at escape).
 def ITERS : UInt32 := 51

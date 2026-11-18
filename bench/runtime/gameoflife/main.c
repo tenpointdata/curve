@@ -1,5 +1,5 @@
-// Native C twin of main.bend: Conway soup census. Single-threaded,
-// 1-to-1 with the Bend program: same bit-packed 4x4-torus step, SWAR
+// Native C twin of main.curve: Conway soup census. Single-threaded,
+// 1-to-1 with the Curve program: same bit-packed 4x4-torus step, SWAR
 // popcount, two-probe classification, 64-soup chunk accumulators and census
 // merge, same wrapping-u32 numerics.
 #include <stdint.h>

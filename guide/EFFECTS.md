@@ -1,7 +1,7 @@
-# Effects in Bend
+# Effects in Curve
 
-An AI wrote this text from the runtime's source (`bend2/comp.ts` and
-`bend2/effs/`). A human will revise it later. Report anything wrong on
+An AI wrote this text from the runtime's source (`curve2/comp.ts` and
+`curve2/effs/`). A human will revise it later. Report anything wrong on
 GitHub.
 
 ## An effect def
@@ -15,9 +15,9 @@ def Clock.now() -> IO(U32):
 ```
 
 Each file registers the effect under its def with `io_eff(CID(Clock.now),
-..)`. The `.c` file serves `bend x.bend -o x`; the `.js` file
-serves `bend x.bend -o x.js` and `bend x.bend`. Every effect in Base is
-built this way: `bend2/effs/*.c` and `*.js` are the reference.
+..)`. The `.c` file serves `curve x.curve -o x`; the `.js` file
+serves `curve x.curve -o x.js` and `curve x.curve`. Every effect in Base is
+built this way: `curve2/effs/*.c` and `*.js` are the reference.
 
 ## The C side
 
@@ -96,7 +96,7 @@ would starve its timers.
 `w` is the effect's scratch space: `hand`, `made`, `size`, `data`, `text`,
 `code`, and `word` until it parks (`io_wait_on` keeps its fd there). The
 runtime owns `w` and `f`. The effect owns `w->data`:
-allocate it in the run function and free it in `pack`. In `bend2/effs/`,
+allocate it in the run function and free it in `pack`. In `curve2/effs/`,
 `file_read.c` is the pattern for `io_work` and `tcp_recv.c` for `io_wait_on`.
 
 ## The JS side
@@ -124,7 +124,7 @@ parks before its first try, as on the C side. `io_sys()` is `libc` through `bun:
 
 ## A complete example
 
-`main.bend`:
+`main.curve`:
 
 ```python
 import Base
@@ -161,8 +161,8 @@ function clock_now() {
 io_eff(CID(Clock.now), clock_now);
 ```
 
-`bend main.bend -o main && ./main` prints a line; so do `bend main.bend -o
-main.js && bun main.js` and `bend main.bend`. The output name must not be
+`curve main.curve -o main && ./main` prints a line; so do `curve main.curve -o
+main.js && bun main.js` and `curve main.curve`. The output name must not be
 one of the effect's files. The two sides count from different zeros:
 `io_tick()` reads `CLOCK_MONOTONIC`, whose zero the OS picks (on Linux,
 boot), and `performance.now()` starts with the process. Only the

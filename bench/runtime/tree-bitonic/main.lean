@@ -1,6 +1,6 @@
--- Lean twin of main.bend: same tree-shaped bitonic sorting
+-- Lean twin of main.curve: same tree-shaped bitonic sorting
 -- network, key generator and Stat verification scan, single-threaded.
--- All values are UInt32 (wrapping, like Bend words); depth counters are
+-- All values are UInt32 (wrapping, like Curve words); depth counters are
 -- Nat pattern-matched structurally; flow is `partial` (its termination
 -- is lexicographic on (d, mode), which Lean does not infer).
 inductive Tree where

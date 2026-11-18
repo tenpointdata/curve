@@ -2,7 +2,7 @@
 // report gave. The patch puts the original getRandomValues back before it
 // throws, so the failure is scoped to the one call: the gate interprets a
 // whole shard in one process, and shards run largest first, so a patch
-// left installed here would take random_u32.bend down with it and the
+// left installed here would take random_u32.curve down with it and the
 // gate would pass and fail as the shards happened to split.
 function crypto_broken_run() {
   const host = globalThis.crypto;

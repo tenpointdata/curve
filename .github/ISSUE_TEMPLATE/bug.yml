@@ -1,5 +1,5 @@
 name: Bug
-description: Something in Bend did not work.
+description: Something in Curve did not work.
 labels: [bug]
 body:
   - type: input
@@ -7,7 +7,7 @@ body:
     attributes:
       label: What you did
       description: The command you ran.
-      placeholder: bend main.bend -o main
+      placeholder: curve main.curve -o main
     validations:
       required: true
   - type: textarea
@@ -22,13 +22,13 @@ body:
     id: file
     attributes:
       label: The file
-      description: The .bend file, if it is small.
+      description: The .curve file, if it is small.
       render: python
   - type: input
     id: version
     attributes:
-      label: bend version
-      placeholder: bend 2.0.0
+      label: curve version
+      placeholder: curve 2.0.0
     validations:
       required: true
   - type: input

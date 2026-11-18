@@ -1,7 +1,7 @@
-// why the kernel's live check fails on a .bendtt def: a port of
-// bendtt.lean's Term.tree / Term.live / Term.pos (affinity, call order,
+// why the kernel's live check fails on a .curvett def: a port of
+// curvett.lean's Term.tree / Term.live / Term.pos (affinity, call order,
 // descent) that names the failing binder or call. A diagnosis, not a verdict.
-//   bun gates/safe_diag.ts <file.bendtt> [def]
+//   bun gates/safe_diag.ts <file.curvett> [def]
 import * as fs from "node:fs";
 
 type Q = 0 | 1 | 2;

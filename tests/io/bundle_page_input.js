@@ -2,7 +2,7 @@ function bundle_page_input() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-page-input-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-page-input-"));
   const html = '<script type="module">console.log(42);</script>\n';
   const page = path.join(dir, "page.html");
   const sub = (name) => {
@@ -10,7 +10,7 @@ function bundle_page_input() {
     return path.join(dir, name);
   };
   const build = (file, out) => child.spawnSync(process.execPath,
-    [path.resolve("bend2/main.ts"), file, "-o", out], {
+    [path.resolve("curve2/main.ts"), file, "-o", out], {
       encoding: "utf8", env: { ...process.env, HOME: dir },
     });
   const refused = (file, out) => {

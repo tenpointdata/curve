@@ -1,7 +1,7 @@
-// TypeScript twin of main.bend: a hash table with separate chaining
+// TypeScript twin of main.curve: a hash table with separate chaining
 // over 2^S independent tables. Same xorshift key of the seed and draw
 // index masked to 20 bits, same low-12-bit bucket, same walk (it
-// stops at the found key; Bend's stops one node later), same head
+// stops at the found key; Curve's stops one node later), same head
 // insert, same hit count, same position-weighted fold over the chain
 // lengths, same sum over the table tree, wrapping-u32 numerics (imul
 // + >>>0). A table is an array of 4096 bucket heads, each a linked

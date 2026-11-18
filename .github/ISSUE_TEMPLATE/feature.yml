@@ -1,11 +1,11 @@
 name: Feature
-description: Something Bend should do.
+description: Something Curve should do.
 labels: [enhancement]
 body:
   - type: textarea
     id: what
     attributes:
-      label: What Bend should do
+      label: What Curve should do
       description: The feature, with an example of the code you would write.
       render: python
     validations:
@@ -14,6 +14,6 @@ body:
     id: why
     attributes:
       label: Why
-      description: What it lets you do that Bend does not today.
+      description: What it lets you do that Curve does not today.
     validations:
       required: true

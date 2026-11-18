@@ -3,4 +3,9 @@
 .agents/
 node_modules/
 *.tgz
-*.bendtt
+*.curvett
+# Run evidence stays with each study.
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal

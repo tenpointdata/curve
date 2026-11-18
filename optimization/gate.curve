@@ -1,0 +1,52 @@
+import Base
+
+type Gate is Data:
+  GatePass{}
+  GateUnknown{}
+  GateFail{}
+
+def verdict(has_failure: Bool, complete: Bool) -> Gate:
+  match has_failure complete:
+    case True{} _:
+      GateFail{}
+    case False{} True{}:
+      GatePass{}
+    case False{} False{}:
+      GateUnknown{}
+
+def rankable(gate: Gate, objectives_complete: Bool) -> Bool:
+  match gate:
+    case GatePass{}:
+      objectives_complete
+    case GateUnknown{}:
+      False{}
+    case GateFail{}:
+      False{}
+
+law failed_evidence_blocks_ranking:
+  for complete: Bool
+  for objectives_complete: Bool
+  {rankable(verdict(True{}, complete), objectives_complete) == False{} : Bool}
+
+def failed_evidence_blocks_ranking(complete, objectives_complete):
+  {==}
+
+law missing_evidence_blocks_ranking:
+  for objectives_complete: Bool
+  {rankable(verdict(False{}, False{}), objectives_complete) == False{} : Bool}
+
+def missing_evidence_blocks_ranking(objectives_complete):
+  {==}
+
+law missing_objectives_block_ranking:
+  for gate: Gate
+  {rankable(gate, False{}) == False{} : Bool}
+
+def missing_objectives_block_ranking(gate):
+  match gate:
+    case GatePass{}:
+      {==}
+    case GateUnknown{}:
+      {==}
+    case GateFail{}:
+      {==}

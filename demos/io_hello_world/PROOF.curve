@@ -1,0 +1,7 @@
+# The proof of the hello world law: main unfolds to its print.
+import Base
+import ./main.curve as Hello
+import ./LAWS.curve as Laws
+
+def Laws.prints_hello():
+  {==}

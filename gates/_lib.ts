@@ -2,7 +2,7 @@
 // mux), a slot of 48 minis (the live ones), a pool that hands jobs to free
 // nodes, and the verdict line.
 //
-// $BEND_HOC, a bastion user (or user@host), is the way in for a machine
+// $CURVE_HOC, a bastion user (or user@host), is the way in for a machine
 // without the `cluster` aliases or a key the minis trust: each session goes
 // to the bastion and on through its own wrapper, `sudo hoc-ssh <index>`,
 // which holds the fleet key, so no personal key lives on the Macs. Only
@@ -27,20 +27,20 @@ export const GATE = process.argv.includes("--gate");
 
 export const ROOT = path.join(import.meta.dirname, "..");
 
-// the site repo (bendlang/bend-lang.com): the installer, the launcher, the
+// the optional Curve service repository: the installer, the launcher, the
 // hub and release.ts live there, beside this checkout or at $SITE_REPO
-export const SITE = process.env.SITE_REPO ?? path.join(ROOT, "..", "bend-lang.com");
+export const SITE = process.env.SITE_REPO ?? path.join(ROOT, "..", "curve-lang.com");
 
 export const BUN = "/usr/local/bun/bin/bun";
 
-const HOC = process.env.BEND_HOC ?? "";
+const HOC = process.env.CURVE_HOC ?? "";
 
-const SLOTS = { dir: "/tmp/bend-cluster-slots", count: 4, size: 48, base: 2 };
+const SLOTS = { dir: "/tmp/curve-cluster-slots", count: 4, size: 48, base: 2 };
 
 const STALE = 20 * 60 * 1000;
 
 const MUX = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
-  "-o", "ControlMaster=auto", "-o", "ControlPath=/tmp/bend-cluster-mux",
+  "-o", "ControlMaster=auto", "-o", "ControlPath=/tmp/curve-cluster-mux",
   "-o", "ControlPersist=600"];
 
 const SSH = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
@@ -161,7 +161,7 @@ async function hoc_ssh(node: number, script: string,
   if (input !== undefined) {
     const sum = crypto.createHash("sha1").update(input).digest("hex");
     const up = staged.get(sum) ?? exec("ssh", [...hoc_mux(node), ...HOC_HUB,
-      "d=$HOME/.bend-gate; mkdir -p $d && { find $d -type f -mmin +60"
+      "d=$HOME/.curve-gate; mkdir -p $d && { find $d -type f -mmin +60"
       + " -delete 2>/dev/null; cat > $d/" + sum + ".$$; } && mv $d/" + sum
       + ".$$ $d/" + sum], input);
     staged.set(sum, up);
@@ -172,7 +172,7 @@ async function hoc_ssh(node: number, script: string,
       }
       return got;
     }
-    from = " < $HOME/.bend-gate/" + sum;
+    from = " < $HOME/.curve-gate/" + sum;
   }
   return node_exec([...hoc_mux(node), ...HOC_HUB, "sudo -n"
     + " /usr/local/bin/hoc-ssh " + String(node) + " '"
@@ -189,7 +189,7 @@ function node_exec(args: string[], input?: Buffer | string,
 // time, so no mux carries more than 10, whatever gates run side by side.
 function hoc_mux(node: number): string[] {
   return MUX.map((o) => o.startsWith("ControlPath=") ? "ControlPath=/tmp/"
-    + "bend-hoc-nodes-" + String(Math.floor(node / 10)) : o);
+    + "curve-hoc-nodes-" + String(Math.floor(node / 10)) : o);
 }
 
 // One session opens a node's mux before the rest use it: sessions that
@@ -242,10 +242,10 @@ export async function node_lock(): Promise<number[]> {
 // bytes to every node: packing takes 0.35 s of the main thread, so a pack
 // per shard held the last of 48 launches back by 17 s.
 export function pack(dir: string): Buffer {
-  const tmp = fs.mkdtempSync("/tmp/bend-pack-");
-  fs.cpSync(path.join(ROOT, "bend2"), path.join(tmp, "bend2"), {
+  const tmp = fs.mkdtempSync("/tmp/curve-pack-");
+  fs.cpSync(path.join(ROOT, "curve2"), path.join(tmp, "curve2"), {
     recursive: true, filter: (p) => fs.statSync(p).isDirectory()
-      ? !/\/(docs|pack)$/.test(p) : /\.(ts|bend|c|js)$/.test(p) });
+      ? !/\/(docs|pack)$/.test(p) : /\.(ts|curve|c|js)$/.test(p) });
   fs.cpSync(dir, path.join(tmp, path.basename(dir)), { recursive: true });
   const tar = child.spawnSync("tar", ["-czf", "-", "-C", tmp, "."],
     { maxBuffer: 1 << 28 });

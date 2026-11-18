@@ -1,6 +1,6 @@
-// Native C twin of main.bend: recursive block matrix multiply over
+// Native C twin of main.curve: recursive block matrix multiply over
 // quad-trees with a Freivalds verification pass. Single-threaded, 1-to-1
-// with the Bend program: same quad-tree/vector datatypes, same recursive
+// with the Curve program: same quad-tree/vector datatypes, same recursive
 // block multiply (8 products joined by 4 adds per node), same numerics in
 // wrapping u32. ADT nodes live in a pool arena with a freelist; the
 // Lf/Qd (Vl/Vn) tag rides in the pointer's low bit, so a node is four

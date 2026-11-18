@@ -1,5 +1,5 @@
 # Runtime
-# 2026-09-17 d0db7b3e bun bend2/docs/gen_pins.ts runtime
+# 2026-09-17 d0db7b3e bun curve2/docs/gen_pins.ts runtime
 
 | bench        | SEQ-CPU         | PAR-CPU         | PAR-GPU         | C        | TS       | Lean     |
 |--------------|-----------------|-----------------|-----------------|----------|----------|----------|

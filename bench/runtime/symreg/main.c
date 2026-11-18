@@ -1,9 +1,9 @@
-// Single-threaded C twin of main.bend. Same
+// Single-threaded C twin of main.curve. Same
 // algorithms over the same expression-tree ADT: expr_gen materializes
 // each depth-5 candidate AST from the xorshift32 stream into a bump
 // arena (reset per candidate, no per-node malloc; nodes hold child
-// pointers, matching Bend's boxed Expr), expr_eval is the recursive
-// pattern-matching interpreter (Bend's eval walks the tree; the value
+// pointers, matching Curve's boxed Expr), expr_eval is the recursive
+// pattern-matching interpreter (Curve's eval walks the tree; the value
 // recursion, order and u32 numerics are identical), expr_size adds
 // the parsimony penalty, batch_run folds the tournament over the
 // population, seed_climb hill-climbs the winner. Checksum printed as

@@ -1,4 +1,4 @@
--- Native Lean twin of main.bend: procedural terrain tile pipeline.
+-- Native Lean twin of main.curve: procedural terrain tile pipeline.
 -- Same value-noise fill, in-place Gauss-Seidel relaxation sweeps with
 -- pass-salted roughening, 64-bin histogram and position-weighted folds,
 -- wrapping-u32 numerics (UInt32; heightmaps are linear Arrays, updated

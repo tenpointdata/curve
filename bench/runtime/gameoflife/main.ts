@@ -1,4 +1,4 @@
-// Native TypeScript twin of main.bend: Conway soup census. Same
+// Native TypeScript twin of main.curve: Conway soup census. Same
 // bit-packed 4x4-torus step, SWAR popcount, two-probe classification,
 // 64-soup chunks and census merge, wrapping-u32 numerics (imul + >>>0).
 const word_wrap = (value: number): number => value >>> 0;

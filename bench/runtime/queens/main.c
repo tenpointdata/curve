@@ -1,8 +1,8 @@
-// Single-threaded C twin of main.bend. Same algorithm, same shape:
+// Single-threaded C twin of main.curve. Same algorithm, same shape:
 // 4-row prefix decode + bitmask legality, then the classic bitmask
 // backtracker over the remaining rows threading per-branch
 // Stats{sols, nodes}: peel b = cand & -cand, descend on the child
-// candidate word, loop on the sibling set. The Bend fork tree's
+// candidate word, loop on the sibling set. The Curve fork tree's
 // smerge reduction is a plain sum over the prefix index space.
 // Checksum = (sols * 2654435761) ^ nodes.
 // Expected at DEPTH=17, SIZE=17, LIMIT=11730: 2063750025.

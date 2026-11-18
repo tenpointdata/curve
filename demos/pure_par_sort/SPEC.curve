@@ -1,0 +1,14 @@
+# Specification helpers for LAWS.curve, not part of the editable program.
+# Keep this file and LAWS.curve unchanged when rewriting main.curve or PROOF.curve.
+
+import Base
+import ./main.curve as Sort
+
+# the leaves of a tree, added
+def sum(d: Nat, t: Sort.Tree(d)) -> Nat:
+  match d:
+    case 0n:
+      t
+    case 1n++p:
+      (x, y) = t
+      Nat.add(sum(p, x), sum(p, y))

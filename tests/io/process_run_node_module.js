@@ -5,9 +5,9 @@ function process_run_node_module() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-process-node-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-process-node-"));
   try {
-    const input = path.join(dir, "main.bend");
+    const input = path.join(dir, "main.curve");
     const output = path.join(dir, "main.cjs");
     const preload = path.join(dir, "preload.cjs");
     const marker = path.join(dir, "spawned");
@@ -37,10 +37,10 @@ child.spawn = function (...args) {
 `);
     const command = bun ? process.execPath : "bun";
     const prefix = bun && Bun.main.startsWith("/$bunfs/")
-      ? [] : [path.resolve("bend2/main.ts")];
+      ? [] : [path.resolve("curve2/main.ts")];
     const options = {
       encoding: "utf8",
-      env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+      env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
     };
     delete options.env.NODE_OPTIONS;
     const built = child.spawnSync(command,

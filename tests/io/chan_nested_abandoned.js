@@ -30,7 +30,7 @@ function host_abandon(c) {
           : { $: CID(Chan.try_send), args: [c, i, 60000], kont: k },
       }));
     } catch (e) {
-      if (e !== "bend: no effect registers missing nested effect") throw e;
+      if (e !== "curve: no effect registers missing nested effect") throw e;
       caught = true;
       code = 0;
     }

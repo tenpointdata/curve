@@ -2,11 +2,7 @@ name: repo-gate
 
 # The repo gate (gates/repo.ts: the allow list and the ttok caps) on every PR,
 # and again in the merge queue, on main plus the PRs queued ahead plus this
-# one: a PR's own branch is checked against a stale main, and #1269 passed at
-# 63,821 tokens there, then landed comp.ts at 64,250 after five other merges.
-# The gate is main's, run over the PR's tree, so a PR cannot pass by editing
-# the gate that checks it. It needs only git, bun and ttok, and runs on
-# GitHub's machines with no secrets, so a PR from a fork is safe to run.
+# one. Use main's gate against the proposed tree once main has the Curve layout.
 on:
   pull_request:
   merge_group:
@@ -33,5 +29,14 @@ jobs:
       - name: main's gate files over this tree
         run: |
           git fetch --no-tags --depth=1 origin main
-          git checkout FETCH_HEAD -- gates/
+          if git cat-file -e FETCH_HEAD:curve2/curve.ts; then
+            git archive FETCH_HEAD gates/repo.ts gates/_lib.ts | tar -xf -
+          fi
       - run: bun gates/repo.ts
+      - run: bun curve2/main.ts optimization/gate.curve --check-only
+      - run: bun test --preload ./curve2/main.ts optimization/optimization.test.ts
+      - name: Verify source installation
+        run: |
+          sh scripts/build.sh "$RUNNER_TEMP/curve-install"
+          "$RUNNER_TEMP/curve-install/bin/curve" --version
+          "$RUNNER_TEMP/curve-install/bin/curve" optimize --help

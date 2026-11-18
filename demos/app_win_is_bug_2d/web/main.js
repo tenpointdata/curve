@@ -1,10 +1,10 @@
-// Winning Is Impossible: the visual half. The game itself is main.bend,
-// imported as a module: the bend loader compiles it on the fly, and every def
+// Winning Is Impossible: the visual half. The game itself is main.curve,
+// imported as a module: the curve loader compiles it on the fly, and every def
 // becomes a function on Game. The map is asked from Game.grid, so the level has
 // one author. Every key replays the whole game through Game.replay; this file
 // only draws the state that comes back.
 
-import Game from "../main.bend";
+import Game from "../main.curve";
 
 // Map
 // ===
@@ -22,14 +22,14 @@ for (let y = 0; y < H; y++) {
   }
 }
 
-// Bend bridge
+// Curve bridge
 // ===========
 // The conventions: a constructor is {$: "Name", field: value, ...} (live
 // fields only), Nat is a number, Bool is a plain boolean. Stepping onto the
 // flag's cell is the win: the game sets `won` itself.
 //
 // The page keeps the moves played and shows replay(start(), moves), the term
-// LAWS.bend states its laws on. Stepping from the current board instead would
+// LAWS.curve states its laws on. Stepping from the current board instead would
 // rely on replay composing, which no law asks for, so a game that treats a
 // mid-game board differently from the opening one could be won here.
 

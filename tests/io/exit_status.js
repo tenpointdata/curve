@@ -2,12 +2,12 @@ function exit_status() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-exit-status-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-exit-status-"));
   try {
     const bun = typeof Bun !== "undefined";
     const command = bun ? process.execPath : "bun";
     const prefix = bun && Bun.main.startsWith("/$bunfs/")
-      ? [] : [path.resolve("bend2/main.ts")];
+      ? [] : [path.resolve("curve2/main.ts")];
     const cases = [
       ["IO.exit(0)", 0, ""],
       ["IO.exit(255)", 255, ""],
@@ -18,7 +18,7 @@ function exit_status() {
     ];
     for (let i = 0; i < cases.length; i += 1) {
       const [expression, status, stderr, start] = cases[i];
-      const file = path.join(dir, "main.bend");
+      const file = path.join(dir, "main.curve");
       fs.writeFileSync(file, `import Base
 
 def main() -> IO(Unit):
@@ -29,7 +29,7 @@ def main() -> IO(Unit):
 `);
       const ran = child.spawnSync(command, [...prefix, file], {
         encoding: "utf8",
-        env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+        env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
       });
       if (ran.error) {
         throw ran.error;

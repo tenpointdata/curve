@@ -12,7 +12,7 @@ io_out(${fd}, Buffer.from("x"));
       encoding: "utf8", timeout: 2000,
     });
     if (got.status !== 1 || got.stdout !== "" || got.stderr !== (fd === 1
-      ? "bend: a short write on a standard stream\n" : "")) {
+      ? "curve: a short write on a standard stream\n" : "")) {
       return fd;
     }
   }

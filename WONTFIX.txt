@@ -1,10 +1,10 @@
-WONTFIX: what Bend will not fix, and why. Each entry is a design choice, a
+WONTFIX: what Curve will not fix, and why. Each entry is a design choice, a
 limit of our team size, or an open problem with no solution we trust yet.
 Read this file before you open an issue.
 
 DESIGN (intentional choices)
 
-`bend file.bend` runs a pure main lazily; compiled lanes are strict (#775)
+`curve file.curve` runs a pure main lazily; compiled lanes are strict (#775)
   The checker skips an unused argument; a binary evaluates it. Same value,
   different cost.
 
@@ -35,7 +35,7 @@ No common-subexpression elimination (#812)
   Two calls of `f(p)` run twice. Bind the value once.
 
 The checker is not optimal: some terms are exponential or overflow (#993, #1075)
-  bend.ts is not beta-optimal and recurses on the machine stack. No checker
+  curve.ts is not beta-optimal and recurses on the machine stack. No checker
   avoids every case: `F(100000 * 2) == F(100000 + 100000)` unrolls fully,
   since the sides differ. So conversion takes no layer that makes equality
   quadratic (an identity pass before each reduction) or every check slower
@@ -68,7 +68,7 @@ The hub client trusts the manifest path grammar on POSIX only (#788)
   The path guard is POSIX. Windows is not a supported host (see CAPACITY).
 
 A base-file helper may call a law filled below it (#793)
-  `base.bend` carries this carve-out and the Lean formalization states it.
+  `base.curve` carries this carve-out and the Lean formalization states it.
   User files do not get it.
 
 A handle type is a law of Base (#825)
@@ -118,7 +118,7 @@ these over time; do not open an issue)
 An unbalanced `Array` tree fail-stops at runtime (#808)
   `ALeaf`/`ANode` are public, so the checker admits a tree whose halves
   differ; every backend stores an array as one flat block and traps on such
-  a node. A depth index would fix it in the type, but Bend does no inference,
+  a node. A depth index would fix it in the type, but Curve does no inference,
   so `xs[i]` would have to become `xs[i^d]`; we chose not to. Like the Nat
   cap and the block-class cap below, this is a runtime limit, not a design.
 

@@ -3,9 +3,9 @@ function clo_host_tail() {
   const path = require("node:path");
   const child = require("node:child_process");
   const os = require("node:os");
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bend-clo-host-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "curve-clo-host-"));
   try {
-    const input = path.join(dir, "lib.bend");
+    const input = path.join(dir, "lib.curve");
     const output = path.join(dir, "lib.mjs");
     fs.writeFileSync(input, `import Base
 
@@ -19,9 +19,9 @@ def ap(f: U32 -> U32, x: U32) -> U32:
   f(x)
 `);
     const built = child.spawnSync(process.execPath,
-      [path.resolve("bend2/main.ts"), input, "-o", output], {
+      [path.resolve("curve2/main.ts"), input, "-o", output], {
         encoding: "utf8",
-        env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+        env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
       });
     if (built.status !== 0) {
       return 1;

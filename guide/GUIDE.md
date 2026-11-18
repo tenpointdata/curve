@@ -1,6 +1,6 @@
-# Bend
+# Curve
 
-Bend is a new programming language that combines Lean-like formal proofs with
+Curve is a new programming language that combines Lean-like formal proofs with
 C-like speeds and CUDA-like parallelism. It gives humans an ambiguity-free
 language to communicate their intents to AIs, a compiler capable of mechanically
 checking that the AI implemented these intents to unquestionable mathematical
@@ -8,7 +8,7 @@ correctness, and a compiler that runs that code fast on CPUs and GPUs.
 
 ## Hello, World!
 
-Bend's syntax is Python-shaped, but its semantics are closer to Haskell / Lean,
+Curve's syntax is Python-shaped, but its semantics are closer to Haskell / Lean,
 while being resource-aware like Rust (if less annoyingly). A hello world is just
 a typed definition returning an IO block:
 
@@ -20,10 +20,10 @@ def main() -> IO(Unit):
     IO.print("Hello, world!")
 ```
 
-To run it, install Bend (`curl -fsSL https://bend-lang.com/install.sh | sh`)
-and type `bend hello.bend`.
+To run it, install Curve from the [checkout](../README.md#get-started)
+and type `curve hello.curve`.
 
-Bend is a *pure language*, with effects denoted via a Haskell-inspired
+Curve is a *pure language*, with effects denoted via a Haskell-inspired
 [IO Monad](https://wiki.haskell.org/Introduction_to_IO). It comes with a list
 of built-in effects for files, networking, audio, graphics, input, and more,
 and the user can extend them with foreign C and JS imports; more on that later.
@@ -32,7 +32,7 @@ and the user can extend them with foreign C and JS imports; more on that later.
 
 ### Types and Functions
 
-A typical Bend program is a set of datatypes and functions over them:
+A typical Curve program is a set of datatypes and functions over them:
 
 ```python
 import Base
@@ -52,14 +52,14 @@ def main() -> U32:
   area(Square{5})
 ```
 
-Bend, by default, is *affine*, meaning variables must be used, at most, once.
+Curve, by default, is *affine*, meaning variables must be used, at most, once.
 
 Here, `is Data` declares that `Shape` may be copied, while `is Type` keeps it
 non-copiable. The `+` annotation before a variable name allows using it more
 than once, if the variable is Data-kinded.
 
-Bend does almost no inference, meaning it requires more annotations than similar
-languages. This is what allows Bend's checker to be significantly faster than
+Curve does almost no inference, meaning it requires more annotations than similar
+languages. This is what allows Curve's checker to be significantly faster than
 other provers, and its error messages more precise, at the expense of programs
 and proofs being more verbose. When the checker can't decide the type of an
 expression, just annotate it, as in `{3 : U32}`.
@@ -86,7 +86,7 @@ applications like `U32.add(2)` are closures too.
 
 ### Recursion and Termination
 
-Bend uses recursion to repeat work. Tail calls compile to loops.
+Curve uses recursion to repeat work. Tail calls compile to loops.
 
 ```python
 import Base
@@ -103,7 +103,7 @@ def main() -> U32:
 ```
 
 Here, `t` has one fewer element than `xs`, so `sum` eventually reaches the empty
-list. Bend verifies termination by requiring recursive calls to use smaller
+list. Curve verifies termination by requiring recursive calls to use smaller
 parts of their inputs, obtained through pattern matching. The check reads the
 arguments of a recursive call from left to right: each must be passed unchanged
 until one is a smaller part of its parameter, and the ones after it are free.
@@ -111,12 +111,12 @@ So, put the parameter that shrinks first. Also, is no `if` syntax yet. Use
 `match` on `True{}` and `False{}` instead.
 
 Termination is mandatory and mutual recursion is not allowed. Both restrictions
-keep Bend's proofs sound, as a function that never returns could otherwise prove
+keep Curve's proofs sound, as a function that never returns could otherwise prove
 anything. A loop bounded by the outside world, like a server's, counts down a
 `Nat` fuel argument instead, and two mutually recursive functions become one def
 with an extra argument selecting which to run. A `def` marked `@unsafe` recurses
-freely and may call a def written below it, but falls outside Bend's proof
-guarantees: `bend` runs it, but a check prints SOME PROOFS FAIL and names every
+freely and may call a def written below it, but falls outside Curve's proof
+guarantees: `curve` runs it, but a check prints SOME PROOFS FAIL and names every
 def that relies on it. Types are not code, so the order binds only defs: two
 datatypes, or a datatype and a type-level def, may name each other in any order.
 
@@ -127,7 +127,7 @@ value, pass it to a helper that matches on its parameter.
 
 ### Parallelism
 
-Bend's parallelism primitive is the parallel call notation:
+Curve's parallelism primitive is the parallel call notation:
 
 ```python
 import Base
@@ -150,9 +150,9 @@ A parallel call promises the compiler two things:
 
 2. They run in roughly the same time.
 
-Since Bend is pure and affine, the first point always holds. The second is yours
+Since Curve is pure and affine, the first point always holds. The second is yours
 to keep: if one call finishes before the other, the speedup will be sub-ideal.
-Bend's current scheduler is a contention-free, binary fork-join machine: every
+Curve's current scheduler is a contention-free, binary fork-join machine: every
 task is handed to a core exactly once and never moved afterwards. That makes it
 fast and GPU-friendly, but you must keep the workload balanced.
 
@@ -165,13 +165,13 @@ to the GPU is a zero-cost operation. The GPU shines on uniform numeric work like
 mandelbrot or nbody; divergent work like n-queens stays faster on the CPU. A
 machine without a GPU runs `!` on the CPU (still in parallel). What the lanes
 share also sets the speed: a `+` value read by every lane costs an atomic per
-read. Read `bend guide shaders` before you write a parallel app.
+read. Read `curve guide shaders` before you write a parallel app.
 
 The JavaScript target ignores all that and just runs sequentially.
 
 ### Arrays
 
-Arrays give Bend in-place mutation without giving up purity:
+Arrays give Curve in-place mutation without giving up purity:
 
 ```python
 import Base
@@ -192,7 +192,7 @@ slot count after `*` is a power of two; `[0 : U32^3n]` names the depth instead.
 
 The `a[i]` sugar assumes `Array<U32>`. For other element types, call
 `Array.get` (`Data` elements; else `Array.swap`) and `Array.set` directly, and
-`Array.clone` when you need two copies. Read Bend's Base for reference. This
+`Array.clone` when you need two copies. Read Curve's Base for reference. This
 will be generalized soon!
 
 ### Quantities
@@ -303,12 +303,12 @@ def main() -> {Nat.add(2n, 0n) == 2n : Nat}:
   add_zero(2n)
 ```
 
-Laws are a critical feature in Bend, as they provide an ambiguity-free language
+Laws are a critical feature in Curve, as they provide an ambiguity-free language
 on which humans can state precise specs for AI's to implement. That is, instead
 of writing a natural language prompt such as "implement a function that sorts a
 list", users can write precise laws like "implement a function F such that, for
 every list of numbers, `F(list)` returns the same numbers in ascending order".
-Models are then guaranteed to respond with bug-free code, since Bend will demand
+Models are then guaranteed to respond with bug-free code, since Curve will demand
 that they provide an actual proof.
 
 > We envision that "law-driven development" will eventually become the way humans
@@ -316,22 +316,22 @@ that they provide an actual proof.
 > between having to code everything manually (laborious) and letting AI do it all
 > via prompts without auditing a line of code (error/ambiguity-prone, unsecure).
 
-By convention, a project keeps its laws in two files at its root. `LAWS.bend`
+By convention, a project keeps its laws in two files at its root. `LAWS.curve`
 imports the code and states the laws, each an open claim: the human writes it,
-the AI does not touch it. `PROOF.bend` imports `LAWS.bend` and proves each law
+the AI does not touch it. `PROOF.curve` imports `LAWS.curve` and proves each law
 with a def of the same name (`law sorted` is proven by `def Laws.sorted`): the
-AI writes it, along with the code. `bend PROOF.bend` is the gate: it prints
+AI writes it, along with the code. `curve PROOF.curve` is the gate: it prints
 SOME PROOFS FAIL while any law is open or false, and ALL PROOFS CHECK once every
 law holds.
-bend refuses a `PROOF.bend` that sits beside a `LAWS.bend` without importing it.
+curve refuses a `PROOF.curve` that sits beside a `LAWS.curve` without importing it.
 
-`bend PROOF.bend --verdict` checks the proofs a second time, with a small kernel
+`curve PROOF.curve --verdict` checks the proofs a second time, with a small kernel
 that has a proof in Lean: it prints ALL PROOFS CHECK only when every def outside
-Base is a valid proof, which bend2 and the kernel both accept, and which relies
-on no `@unsafe` or foreign code. `-o PROOF.bendtt` writes the translation the
+Base is a valid proof, which curve2 and the kernel both accept, and which relies
+on no `@unsafe` or foreign code. `-o PROOF.curvett` writes the translation the
 kernel reads; the translation has no proof, so read it to confirm a law.
 
-Bend has no tactics: a proposition is a type, and a proof is a def of that type.
+Curve has no tactics: a proposition is a type, and a proof is a def of that type.
 `{a == b : T}` is an equality; `{==}` proves it when both sides compute to the
 same term. Matching refines the goal in each case, a recursive call is the
 induction hypothesis, and `%e : P` rewrites with `e : {a == b : T}`: `P` is the
@@ -394,7 +394,7 @@ blocks while the child runs. On Linux, native builds need glibc 2.34 or newer
 to close inherited descriptors. It does not sandbox the child: callers must
 whether a command is trusted before executing it.
 
-A Bend program is a set of computations interleaved by one event loop, as in
+A Curve program is a set of computations interleaved by one event loop, as in
 Node.js: one at a time, each runs its pure code, on every core through its
 [parallel calls](#parallelism), up to its next effect, and one that waits on a
 socket, a sleep or a channel steps aside for the others. `IO.fork` starts a
@@ -409,7 +409,7 @@ Every effect in Base is a def whose body is `import "./x.js"` plus a `.c` twin,
 implemented by a host function named after the def, lowercased, dots to
 underscores. You can add your own effects the same way. Only the event loop runs
 them, so proofs, termination and the GPU never touch host code. In the other
-direction, a JS file may `import Game from "./game.bend"` (with `bend2/main.ts`
+direction, a JS file may `import Game from "./game.curve"` (with `curve2/main.ts`
 preloaded), or from the `./game.mjs` that `-o game.mjs` writes, and call every
 non-IO def, with constructors as `{$: "Name", field: value}` and `Nat` as a
 number. A value crosses without a copy: an `Array`
@@ -440,7 +440,7 @@ two defs works: `IO`, `Maybe`, `Result`, or your own. The leading arguments
 
 ### Apps
 
-Graphics in Bend are pure: a frame is an `Image`; `App` maps states to images.
+Graphics in Curve are pure: a frame is an `Image`; `App` maps states to images.
 
 ```python
 import Base
@@ -463,7 +463,7 @@ def main() -> IO(Unit):
 An `Image` is a quadtree: `Pix{color}` paints a square, and `Qua{tl, tr, bl,
 br}` splits it in four, so a frame is drawn by recursion like everything else,
 in parallel if you want. The events are Base's `Event`, each explained in
-`bend2/base.bend`: a pointer (the mouse, a finger or a pen) comes as `Press`,
+`curve2/base.curve`: a pointer (the mouse, a finger or a pen) comes as `Press`,
 `Move`, `Leave` and `Lost`, and a key or button held as the window loses the
 focus comes up. For a first-person camera, `Window.grab(window, True{})`
 hides and holds the cursor, and the mouse's motion comes as `Look{dx, dy}`
@@ -495,8 +495,8 @@ is_le is_gt is_ge` (returning `Bool`) for comparisons, `show` to `String` and
 are just sugar for these. Beyond numbers there are `Bool`, `Cmp`, `Maybe`,
 `Result`, `List`, `Array`, a string-keyed `Map` (`new set get has del keys`;
 `get` takes a default, and `get` and `has` hand the map back beside their
-result), `Set` on top of it, the `Equal` lemmas, and the effects. `bend base`
-prints all of it, `bend base --types` only the types, and `bend base Map` one
+result), `Set` on top of it, the `Equal` lemmas, and the effects. `curve base`
+prints all of it, `curve base --types` only the types, and `curve base Map` one
 name and everything under it.
 
 ### Modules
@@ -504,7 +504,7 @@ name and everything under it.
 A module is a file, and an import gives it a local name:
 
 ```python
-# math.bend
+# math.curve
 import Base
 
 def square(+x: U32) -> U32:
@@ -512,9 +512,9 @@ def square(+x: U32) -> U32:
 ```
 
 ```python
-# main.bend
+# main.curve
 import Base
-import ./math.bend as M  # M.x now names every def of math.bend
+import ./math.curve as M  # M.x now names every def of math.curve
 
 def main() -> U32:
   M.square(7)
@@ -522,18 +522,17 @@ def main() -> U32:
 
 The alias is local to the importing file, and dots inside a name are just
 characters: `U32.show` needs no module. A module's path is plain names
-(letters, digits, `_` and `-`, no digit first): `math.bend` is a module,
-`math.extra.bend` is refused. A law left open in one file may be filled in
+(letters, digits, `_` and `-`, no digit first): `math.curve` is a module,
+`math.extra.curve` is refused. A law left open in one file may be filled in
 another as `def M.name(..)`, so a proof can ship separately from its claim.
-`import 0x<hash>/main.bend as P` imports a package by content hash, fetched
-from the hub and checked against it; `bend main.bend --publish` uploads a file
+`import 0x<hash>/main.curve as P` imports a package by content hash, fetched
+from the hub and checked against it; `curve main.curve --publish` uploads a file
 with everything it imports and prints that line.
-`import <name>@<version>/main.bend as P` is the same package by the name
-its author gave it on the hub, with `bend main.bend --publish
-<name>@<version>` after `bend login`.
+`import <name>@<version>/main.curve as P` is the same package by the name
+its author gave it on the hub, with `curve main.curve --publish
+<name>@<version>` after `curve login`.
 
-A publish is public and permanent, under BendHub's terms
-(https://bend-lang.com/bendai/terms#s18). Put a `LICENSE` file
+A publish is public and permanent, under the terms of the configured Curve Hub. Put a `LICENSE` file
 next to your entry file, ideally opening with a line like
 `SPDX-License-Identifier: MIT`; `--publish` takes every file named exactly
 `LICENSE` beside a published file, and a package without one is MIT-0. You are
@@ -542,16 +541,16 @@ responsible for what you publish, so pick the license it may carry. Adding a
 
 ## Tooling
 
-Bend is a single command:
+Curve is a single command:
 
 ```bash
-bend file.bend            # check; run main (IO compiled; a value normalized)
-bend file.bend -o file    # compile to a native binary (clang 14+; 19+ with `!`)
-bend file.bend -o file.c  # emit the C source instead
-bend file.bend -o file.js # emit the JS source instead
-bend file.bend -o f.mjs   # emit an ES module of its non-IO defs, for JS to import
-bend file.bend --verdict  # check; then recheck with the proven BendTT kernel
-bend page.html -o dist    # bundle a web page that imports .bend files
+curve file.curve            # check; run main (IO compiled; a value normalized)
+curve file.curve -o file    # compile to a native binary (clang 14+; 19+ with `!`)
+curve file.curve -o file.c  # emit the C source instead
+curve file.curve -o file.js # emit the JS source instead
+curve file.curve -o f.mjs   # emit an ES module of its non-IO defs, for JS to import
+curve file.curve --verdict  # check; then recheck with the proven CurveTT kernel
+curve page.html -o dist    # bundle a web page that imports .curve files
 ./file +RTS --threads 8   # run a native binary on 8 CPU threads
 ./file +RTS --gpu 4GB     # cap the GPU heap at 4GB; off runs ! calls on the CPU
 ```
@@ -561,9 +560,9 @@ by the checker (slow for big work) and printed; a file with no `main` just
 checks. A binary that uses `!` builds its GPU program too, as `file.gpu`, which
 must stay beside it: on macOS it needs Metal, on Linux CUDA 12 or 13 at
 `$CUDA_HOME`, `/usr/local/cuda` or `/opt/cuda`. On Linux a program with a
-Window needs `libx11-dev`, one with Audio `libasound2-dev`. `bend guide` prints
-this text, `bend base` prints the Base library (`bend base Map` prints one name
-and everything under it), and `bend --help` lists the other commands.
+Window needs `libx11-dev`, one with Audio `libasound2-dev`. `curve guide` prints
+this text, `curve base` prints the Base library (`curve base Map` prints one name
+and everything under it), and `curve --help` lists the other commands.
 
 ## Syntax Reference
 
@@ -573,7 +572,7 @@ and brackets are sugar for names in Base.
 ```python
 # Top level
 import Base                              # the prelude
-import ./file.bend as M                  # a module; its defs are M.x
+import ./file.curve as M                  # a module; its defs are M.x
 type D<a, -A: Kind(a)> is Kind(a):       # a datatype and its kind
   K{x: A, xs: List<a, A>}                # one constructor per line
 def f(x: A, -y: B, +z: C) -> T:          # a def; the body follows
@@ -637,7 +636,7 @@ A `Nat` literal past `256n` is `U32.to_nat(n)` underneath, up to `4294967295n`.
 
 ## Under the Hood
 
-Bend's compiler emits one C file, and that file is both the CPU program and the
+Curve's compiler emits one C file, and that file is both the CPU program and the
 GPU kernel. clang compiles it for the CPU. Metal (on Apple) or CUDA (on NVIDIA)
 compiles the same file for the GPU. So a `!` call runs the same code on
 whichever chip it lands on.
@@ -649,30 +648,30 @@ on the spot, but copying any value of a datatype makes all its nodes count their
 fields. There is no C stack either: each def compiles to a segment of a flat
 state machine, a call is a jump, and a parallel call creates a join task plus
 one task per call, which the scheduler deals across CPU or GPU lanes.
-`paper/BendRT.pdf` has the design and the benchmarks.
+`paper/CurveRT.pdf` has the design and the benchmarks.
 
-Bend's theory has one universe and no positivity check: `Type : Type` holds,
+Curve's theory has one universe and no positivity check: `Type : Type` holds,
 and a datatype may recurse on the left of an arrow. What keeps this consistent
 is a wall between two checking modes. Code that runs is checked *live*; types,
 erased arguments and equations are checked *dead*. Dead code may loop forever or
 inhabit `Empty`, but nothing dead ever counts as live evidence, and live
-recursion must terminate. `bend2/bendtt.lean` is BendTT's kernel in Lean, with
+recursion must terminate. `curve2/curvett.lean` is CurveTT's kernel in Lean, with
 a proof that no def it accepts has type `Empty` and that live code halts;
-`--verdict` checks a file with it. `paper/BendTT.pdf` is the paper.
+`--verdict` checks a file with it. `paper/CurveTT.pdf` is the paper.
 
 ## Further Reading
 
 - `demos/`: complete programs, including the game and its proof from the video.
-- `bend2/base.bend`: the Base library, also printed by `bend base`.
-- `paper/BendTT.pdf` and `paper/BendRT.pdf`: the type theory and the runtime.
+- `curve2/base.curve`: the Base library, also printed by `curve base`.
+- `paper/CurveTT.pdf` and `paper/CurveRT.pdf`: the type theory and the runtime.
 
 ## Extra
 
-`bend guide shaders` prints "Shaders in Bend", a tutorial written by AIs for
-AIs on how to write efficient shaders in Bend. It distills what building
-`demos/app_slash_boss_3d` (120 FPS in pure Bend) taught. Read it before you
-write a graphical or parallel app in Bend.
+`curve guide shaders` prints "Shaders in Curve", a tutorial written by AIs for
+AIs on how to write efficient shaders in Curve. It distills what building
+`demos/app_slash_boss_3d` (120 FPS in pure Curve) taught. Read it before you
+write a graphical or parallel app in Curve.
 
-`bend guide effects` prints "Effects in Bend", an AI-written note (to be
+`curve guide effects` prints "Effects in Curve", an AI-written note (to be
 revised by a human) on the C and JS side of custom effects. Read it before
 you write one.

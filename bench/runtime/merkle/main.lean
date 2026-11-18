@@ -1,7 +1,7 @@
--- Lean twin of main.bend: same Speck32/64 leaf stream, Merkle
+-- Lean twin of main.curve: same Speck32/64 leaf stream, Merkle
 -- tree build, audit re-fold, scalar-prover proof extraction and proof
 -- verification, single-threaded. All values are UInt32 (wrapping, like
--- Bend words); round/depth counters are Nat pattern-matched
+-- Curve words); round/depth counters are Nat pattern-matched
 -- structurally.
 inductive Mt where
   | leaf (h : UInt32)

@@ -1,4 +1,4 @@
-// TypeScript twin of main.bend: same template generator into a JS
+// TypeScript twin of main.curve: same template generator into a JS
 // string, same tokenizer over its char codes (nested loops, one per
 // token class), same checksum, single-threaded. Wrapping u32
 // arithmetic rides Math.imul and >>> 0.

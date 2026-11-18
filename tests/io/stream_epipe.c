@@ -4,7 +4,7 @@
 // writes a line there with io_out and io_sync, as IO.print does. The
 // answer is the child's status as a shell shows it: 128 plus the signal
 // that ended it, else its exit code. With resume set, the child returns
-// into Bend instead, to print and exit through the real IO loop.
+// into Curve instead, to print and exit through the real IO loop.
 Term epipe_write_run(Env e, Term* f, IoWork* w) {
   int fd = (int)(u32)f[0];
   int p[2];

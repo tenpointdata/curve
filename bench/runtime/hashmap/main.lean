@@ -1,7 +1,7 @@
--- Lean twin of main.bend: a hash table with separate chaining over
+-- Lean twin of main.curve: a hash table with separate chaining over
 -- 2^S independent tables. Same xorshift key of the seed and draw index
 -- masked to 20 bits, same low-12-bit bucket, same walk (it stops at
--- the found key; Bend's stops one node later), same head insert, same
+-- the found key; Curve's stops one node later), same head insert, same
 -- hit count, same position-weighted fold over the chain lengths, same
 -- sum over the table tree, wrapping-u32 numerics (UInt32). A table is
 -- an Array (List UInt32) of 4096 buckets, consed onto in place while

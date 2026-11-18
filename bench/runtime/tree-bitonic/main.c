@@ -1,6 +1,6 @@
-// Native C twin of main.bend: same tree-shaped bitonic sorting
+// Native C twin of main.curve: same tree-shaped bitonic sorting
 // network, key generator and Stat verification scan, single-threaded,
-// one C function per Bend function. A Term is a tagged 64-bit
+// one C function per Curve function. A Term is a tagged 64-bit
 // reference: bit 32 marks the Leaf constructor (v rides immediate in
 // the low word), Node terms index an arena of {l, r} pairs with a
 // freelist. Each match consumes its node (mirroring the linear

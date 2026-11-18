@@ -1,10 +1,10 @@
-// Native C twin of main.bend: a hash table with separate chaining
-// over 2^S independent tables, single-threaded, 1-to-1 with the Bend
+// Native C twin of main.curve: a hash table with separate chaining
+// over 2^S independent tables, single-threaded, 1-to-1 with the Curve
 // program: same xorshift key of the seed and draw index masked to 20
 // bits, same low-12-bit bucket, same walk (it stops at the found
-// key; Bend's stops one node later), same head insert, same hit
+// key; Curve's stops one node later), same head insert, same hit
 // count, same position-weighted fold over the chain lengths, same
-// sum over the table tree, wrapping-u32 numerics. Where Bend's
+// sum over the table tree, wrapping-u32 numerics. Where Curve's
 // buckets hold boxed Chain values that Array.get shares and
 // Array.set swaps, a table here is one array of bucket heads over an
 // index-linked node pool (a key column and a next column, KEYS nodes
