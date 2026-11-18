@@ -7,6 +7,8 @@ const HELP = `Curve web
 
   curve web serve <app.curve> [--host HOST] [--port PORT]
     [--cert CERT.pem --key KEY.pem] [--public DIRECTORY] [--max-body BYTES]
+    [--allow-origin HTTPS_ORIGIN ...] [--ca CA.pem]
+    [--fetch-timeout MILLISECONDS] [--max-fetch-bytes BYTES]
   curve web jsx <component.jsx|component.tsx> -o <component.curve>
 
 Bundle a React HTML entry with curve <index.html> -o <public-directory>.
@@ -22,6 +24,8 @@ async function serve(args: string[]): Promise<void> {
     args, allowPositionals: true, options: {
       host: { type: "string" }, port: { type: "string" }, cert: { type: "string" },
       key: { type: "string" }, public: { type: "string" }, "max-body": { type: "string" },
+      "allow-origin": { type: "string", multiple: true }, ca: { type: "string" },
+      "fetch-timeout": { type: "string" }, "max-fetch-bytes": { type: "string" },
     },
   });
   if (positionals.length !== 1 || !/\.(?:curve|bend)$/.test(positionals[0])) {
@@ -35,6 +39,12 @@ async function serve(args: string[]): Promise<void> {
     publicDirectory: values.public,
     maxBodyBytes: values["max-body"] === undefined ? undefined : integer(values["max-body"], "body limit", 0x7fffffff),
     tls: values.cert && values.key ? { cert: values.cert, key: values.key } : undefined,
+    outbound: {
+      allowedOrigins: values["allow-origin"],
+      ca: values.ca ? readFileSync(values.ca, "utf8") : undefined,
+      timeoutMs: values["fetch-timeout"] === undefined ? undefined : integer(values["fetch-timeout"], "HTTPS timeout", 0x7fffffff),
+      maxResponseBytes: values["max-fetch-bytes"] === undefined ? undefined : integer(values["max-fetch-bytes"], "HTTPS byte limit", 0x7fffffff),
+    },
     onError: error => console.error(error.message),
   });
   console.log(server.url.href);
@@ -64,8 +74,8 @@ async function jsx(args: string[], check: (file: string) => Promise<unknown>): P
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
-  const { compileJsx } = await import("./jsx.ts");
-  const generated = await compileJsx(readFileSync(input, "utf8"), positionals[0]);
+  const { compileJsxFile } = await import("./jsx.ts");
+  const generated = compileJsxFile(input);
   const directory = mkdtempSync(join(dirname(destination), ".curve-jsx-"));
   try {
     const pending = join(directory, "generated.curve");

@@ -66,3 +66,38 @@ def text(status: U32, body: String) -> Response:
 
 def json(status: U32, encoded: String) -> Response:
   Response{status, [field("content-type", "application/json; charset=utf-8")], encoded}
+
+type HttpsRequest is Data:
+  HttpsRequest{method: Method, url: String, headers: List<&2, Field>, body: String}
+
+type FetchFailure is Data:
+  InvalidRequest{}
+  OriginDenied{}
+  TimedOut{}
+  Cancelled{}
+  ResponseTooLarge{}
+  TransportError{}
+
+type FetchResult is Data:
+  Received{status: U32, headers: List<&2, Field>, body: String}
+  FetchFailed{reason: FetchFailure}
+
+type Action is Type:
+  Send{response: Response}
+  FetchHttps{request: HttpsRequest, next: FetchResult -> Action}
+
+def send(response: Response) -> Action:
+  Send{response}
+
+def https(request: HttpsRequest, next: FetchResult -> Action) -> Action:
+  FetchHttps{request, next}
+
+def get(url: String, next: FetchResult -> Action) -> Action:
+  https(HttpsRequest{Get{}, url, [], ""}, next)
+
+def resume(action: Action, result: FetchResult) -> Action:
+  match action:
+    case Send{response}:
+      Send{response}
+    case FetchHttps{_, next}:
+      next(result)

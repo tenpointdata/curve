@@ -15,6 +15,19 @@ symlinkSync(outside, join(publicDirectory, "linked.txt"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 const { default: app } = await import(resolve(import.meta.dirname, "../demos/web_http/server.curve"));
+const { default: outboundApp } = await import(resolve(import.meta.dirname, "../demos/web_http/client.curve"));
+
+function generatedTls() {
+  const directory = mkdtempSync(join(root, "tls-"));
+  const cert = join(directory, "server.pem");
+  const key = join(directory, "server-key.pem");
+  const generated = Bun.spawnSync([
+    "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
+    "-subj", "/CN=127.0.0.1", "-addext", "subjectAltName=IP:127.0.0.1", "-keyout", key, "-out", cert,
+  ]);
+  if (generated.exitCode !== 0) throw new Error(generated.stderr.toString());
+  return { cert, key };
+}
 
 test("typed routes handle method and URL parameters, HEAD, request body and assets", async () => {
   const server = startServer(app, { port: 0, publicDirectory, maxBodyBytes: 1024 });
@@ -48,14 +61,7 @@ test("typed routes handle method and URL parameters, HEAD, request body and asse
 });
 
 test("Bun terminates HTTPS with a caller-supplied trusted certificate", async () => {
-  const cert = join(root, "server.pem");
-  const key = join(root, "server-key.pem");
-  const generated = Bun.spawnSync([
-    "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
-    "-subj", "/CN=127.0.0.1", "-addext", "subjectAltName=IP:127.0.0.1", "-keyout", key, "-out", cert,
-  ]);
-  if (generated.exitCode !== 0) throw new Error(generated.stderr.toString());
-
+  const { cert, key } = generatedTls();
   const server = startServer(app, { port: 0, tls: { cert, key } });
   try {
     expect(server.url.protocol).toBe("https:");
@@ -82,4 +88,69 @@ test("ambiguous path patterns and malformed module exports fail startup", () => 
     }),
     handle: () => null,
   })).toThrow("Ambiguous route patterns");
+});
+
+
+test("a Curve action resumes with an HTTPS result and refuses disallowed origins", async () => {
+  const { cert, key } = generatedTls();
+  const hits: string[] = [];
+  const upstream = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    tls: { cert: Bun.file(cert), key: Bun.file(key) },
+    async fetch(request) {
+      const { pathname } = new URL(request.url);
+      hits.push(pathname);
+      if (pathname === "/redirect") return Response.redirect(new URL("/target", request.url), 302);
+      if (pathname === "/echo") {
+        return new Response(request.method + " " + request.headers.get("content-type") + " " + await request.text());
+      }
+      if (pathname === "/large") return new Response("🌍".repeat(300));
+      if (pathname === "/slow") {
+        await Bun.sleep(800);
+        return new Response("late");
+      }
+      return new Response("from TLS 🌍", { status: 202 });
+    },
+  });
+  let trusted: ReturnType<typeof startServer> | undefined;
+  let defaultTrust: ReturnType<typeof startServer> | undefined;
+  try {
+    const ca = await Bun.file(cert).text();
+    const allowedOrigins = [upstream.url.origin];
+    trusted = startServer(outboundApp, { port: 0, outbound: {
+      allowedOrigins, ca, maxResponseBytes: 512, timeoutMs: 300,
+    } });
+    defaultTrust = startServer(outboundApp, { port: 0, outbound: { allowedOrigins } });
+
+    const request = (server: ReturnType<typeof startServer>, target: URL | string) => {
+      const url = new URL("/api/fetch", server.url);
+      url.searchParams.set("url", String(target));
+      return fetch(url, { redirect: "manual" });
+    };
+    const denied = await request(trusted, "https://127.0.0.1:1/check");
+    expect(denied.status).toBe(403);
+    const invalid = await request(trusted, "http://127.0.0.1:1/check");
+    expect(invalid.status).toBe(400);
+    expect(hits).toEqual([]);
+
+    const untrusted = await request(defaultTrust, new URL("/untrusted", upstream.url));
+    expect([untrusted.status, await untrusted.text()]).toEqual([502, "HTTPS transport failed"]);
+    const ok = await request(trusted, new URL("/ok", upstream.url));
+    expect([ok.status, await ok.text()]).toEqual([202, "from TLS 🌍"]);
+    const submit = new URL("/api/send", trusted.url);
+    submit.searchParams.set("url", new URL("/echo", upstream.url).href);
+    const echoed = await fetch(submit, { method: "POST", body: "Curve 🌍" });
+    expect([echoed.status, await echoed.text()]).toEqual([200, "POST text/plain Curve 🌍"]);
+    expect((await request(trusted, new URL("/redirect", upstream.url))).status).toBe(302);
+    const large = await request(trusted, new URL("/large", upstream.url));
+    expect([large.status, await large.text()]).toEqual([502, "HTTPS response exceeded its byte limit"]);
+    const slow = await request(trusted, new URL("/slow", upstream.url));
+    expect([slow.status, await slow.text()]).toEqual([504, "HTTPS request timed out"]);
+    expect(hits).toEqual(["/ok", "/echo", "/redirect", "/large", "/slow"]);
+  } finally {
+    await trusted?.stop(true);
+    await defaultTrust?.stop(true);
+    await upstream.stop(true);
+  }
 });

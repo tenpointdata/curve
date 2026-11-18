@@ -1,0 +1,48 @@
+import Base
+import Web
+
+def routes() -> List<&2, Web.Route>:
+  [Web.route(Web.Get{}, "/api/fetch", 0), Web.route(Web.Post{}, "/api/send", 1)]
+
+def failed(reason: Web.FetchFailure) -> Web.Action:
+  match reason:
+    case Web.InvalidRequest{}:
+      Web.send(Web.text(400, "Expected an HTTPS URL"))
+    case Web.OriginDenied{}:
+      Web.send(Web.text(403, "HTTPS origin is not allowed"))
+    case Web.TimedOut{}:
+      Web.send(Web.text(504, "HTTPS request timed out"))
+    case Web.Cancelled{}:
+      Web.send(Web.text(502, "HTTPS request cancelled"))
+    case Web.ResponseTooLarge{}:
+      Web.send(Web.text(502, "HTTPS response exceeded its byte limit"))
+    case Web.TransportError{}:
+      Web.send(Web.text(502, "HTTPS transport failed"))
+
+def received(result: Web.FetchResult) -> Web.Action:
+  match result:
+    case Web.Received{status, _, body}:
+      Web.send(Web.text(status, body))
+    case Web.FetchFailed{reason}:
+      failed(reason)
+
+def fetch_url(url: Maybe<&2, String>) -> Web.Action:
+  match url:
+    case None{}:
+      Web.send(Web.text(400, "A URL is required"))
+    case Some{value}:
+      Web.get(value, result => received(result))
+
+def submit(url: Maybe<&2, String>, body: String) -> Web.Action:
+  match url:
+    case None{}:
+      Web.send(Web.text(400, "A URL is required"))
+    case Some{value}:
+      Web.https(Web.HttpsRequest{Web.Post{}, value, [Web.field("content-type", "text/plain")], body}, received)
+
+def handle_action(route: U32, +request: Web.Request) -> Web.Action:
+  match route:
+    case 0:
+      fetch_url(Web.query_param("url", request))
+    case _:
+      submit(Web.query_param("url", request), Web.body(request))

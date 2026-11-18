@@ -1,3 +1,8 @@
+const methods = new Map([
+  ["Get", "GET"], ["Head", "HEAD"], ["Post", "POST"], ["Put", "PUT"],
+  ["Patch", "PATCH"], ["Delete", "DELETE"], ["Options", "OPTIONS"],
+]);
+
 type Value = Readonly<Record<string, unknown>>;
 
 export type CurveList<T> = { $: "Nil" } | { $: "Con"; head: T; tail: CurveList<T> };
@@ -16,6 +21,13 @@ export interface CurveRequest {
 export function record(value: unknown, what: string): Value {
   if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error("Expected " + what);
   return value as Value;
+}
+
+export function methodName(value: unknown): string {
+  const method = record(value, "Web.Method").$;
+  const name = typeof method === "string" ? methods.get(method) : undefined;
+  if (!name) throw new Error("Expected Web.Method");
+  return name;
 }
 
 export function unpackList<T>(value: unknown, decode: (item: unknown) => T): T[] {
@@ -46,6 +58,10 @@ function fieldEntry(value: unknown): [string, string] {
   return [field.key, field.value];
 }
 
+export function unpackFields(value: unknown): [string, string][] {
+  return unpackList(value, fieldEntry);
+}
+
 export function toResponse(value: unknown, method: string): Response {
   const result = record(value, "Web.Response");
   const { status, body } = result;
@@ -53,7 +69,7 @@ export function toResponse(value: unknown, method: string): Response {
       !Number.isInteger(status) || status < 200 || status > 599 || typeof body !== "string") {
     throw new Error("Expected Web.Response with a final HTTP status and text body");
   }
-  const headers = unpackList(result.headers, fieldEntry);
+  const headers = unpackFields(result.headers);
   const noBody = method === "HEAD" || status === 204 || status === 205 || status === 304;
   return new Response(noBody ? null : body, { status, headers });
 }
