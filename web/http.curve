@@ -1,0 +1,68 @@
+import Base
+
+type Method is Data:
+  Get{}
+  Head{}
+  Post{}
+  Put{}
+  Patch{}
+  Delete{}
+  Options{}
+
+type Field is Data:
+  Field{key: String, value: String}
+
+type Request is Data:
+  Request{method: String, path: String, params: List<&2, Field>, query: List<&2, Field>, headers: List<&2, Field>, body: String}
+
+type Response is Data:
+  Response{status: U32, headers: List<&2, Field>, body: String}
+
+type Route is Data:
+  Route{method: Method, pattern: String, handler: U32}
+
+def field(key: String, value: String) -> Field:
+  Field{key, value}
+
+def route(method: Method, pattern: String, handler: U32) -> Route:
+  Route{method, pattern, handler}
+
+def found(equal: Bool, value: String, next: Unit -> Maybe<&2, String>) -> Maybe<&2, String>:
+  match equal:
+    case True{}:
+      Some{value}
+    case False{}:
+      next(Unit{})
+
+def lookup(+key: String, fields: List<&2, Field>) -> Maybe<&2, String>:
+  match fields:
+    case []:
+      None{}
+    case Field{name, value} <> tail:
+      found(String.eq(key, name), value, ignored => lookup(key, tail))
+
+def param(key: String, request: Request) -> Maybe<&2, String>:
+  match request:
+    case Request{_, _, params, _, _, _}:
+      lookup(key, params)
+
+def query_param(key: String, request: Request) -> Maybe<&2, String>:
+  match request:
+    case Request{_, _, _, query, _, _}:
+      lookup(key, query)
+
+def header(lowercase_name: String, request: Request) -> Maybe<&2, String>:
+  match request:
+    case Request{_, _, _, _, headers, _}:
+      lookup(lowercase_name, headers)
+
+def body(request: Request) -> String:
+  match request:
+    case Request{_, _, _, _, _, text}:
+      text
+
+def text(status: U32, body: String) -> Response:
+  Response{status, [field("content-type", "text/plain; charset=utf-8")], body}
+
+def json(status: U32, encoded: String) -> Response:
+  Response{status, [field("content-type", "application/json; charset=utf-8")], encoded}

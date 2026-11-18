@@ -1,0 +1,27 @@
+import Base
+import Web
+
+def routes() -> List<&2, Web.Route>:
+  [
+    Web.route(Web.Get{}, "/api/health", 0),
+    Web.route(Web.Get{}, "/api/hello/:name", 1),
+    Web.route(Web.Post{}, "/api/echo", 2)
+  ]
+
+def greeting(name: Maybe<&2, String>) -> Web.Response:
+  match name:
+    case None{}:
+      Web.text(400, "A name is required")
+    case Some{value}:
+      Web.text(200, "Hello, " ++ value)
+
+def handle(route: U32, request: Web.Request) -> Web.Response:
+  match route:
+    case 0:
+      Web.json(200, "{\"status\":\"ok\"}")
+    case 1:
+      greeting(Web.param("name", request))
+    case 2:
+      Web.text(200, Web.body(request))
+    case _:
+      Web.text(404, "Not Found")

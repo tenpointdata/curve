@@ -1,0 +1,9 @@
+{
+  "name": "curve-web-toolchain",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@babel/parser": "7.28.5",
+    "@babel/types": "7.28.5"
+  }
+}

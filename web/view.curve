@@ -1,0 +1,11 @@
+import Base
+
+type Prop is Data:
+  ViewTextProp{name: String, value: String}
+  ViewBoolProp{name: String, value: Bool}
+  ViewNumberProp{name: String, value: U32}
+
+type Node is Data:
+  ViewText{value: String}
+  ViewElement{tag: String, props: List<&2, Prop>, children: List<&2, Node>}
+  ViewFragment{children: List<&2, Node>}

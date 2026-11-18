@@ -50,6 +50,7 @@ const USAGE = [
   ["curve update", "install the latest curve (curl | sh, shown first)"],
   ["curve version", "print the version"],
   ["curve optimize [--help]", "manage constrained optimization studies"],
+  ["curve web [--help]", "serve web apps and lower React components"],
   ["curve guide", "print the Curve guide"],
 ];
 
@@ -131,6 +132,17 @@ const PLUGIN: BunPlugin = {
 // version check, so the check never delays the command's own work.
 async function cli(): Promise<void> {
   const args = process.argv.slice(2);
+  if (args[0] === "web") {
+    Bun.plugin(PLUGIN);
+    try {
+      const { runWeb } = await import("../web/cli.ts");
+      await runWeb(args.slice(1), book_read);
+    } catch (error) {
+      cli_say(2, "curve web: " + book_err(error) + "\n");
+      process.exitCode = 1;
+    }
+    return;
+  }
   if (args[0] === "optimize") {
     Bun.plugin(PLUGIN);
     try {
@@ -857,7 +869,7 @@ function pkg_files(file: string, book: Curve.Book,
       + " system's root; move it into a directory";
   }
   const raws = [...[...seen].flatMap(([real, ns]): [string, string][] =>
-    real === BASE || ns === null || ns.startsWith("0x") ? []
+    real === BASE || ns === null || ns.startsWith("0x") || Curve.web_builtin(real) ? []
       : [[ns === "" ? path.basename(file) : ns + ".curve", real]]),
   ...Object.entries(book.tlds).flatMap(([k, tld]): [string, string][] =>
     tld.$ !== "Def" || tld.i === undefined || tld.b === true
