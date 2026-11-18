@@ -1,4 +1,4 @@
-// Native TS translation of main.bend: chaotic three-body ensemble,
+// Native TS translation of main.curve: chaotic three-body ensemble,
 // f32 (Math.fround per op), Plummer-softened, symplectic Euler.
 const SY = 17,
   ST = 300;

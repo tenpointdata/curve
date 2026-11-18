@@ -1,5 +1,5 @@
-// Native TypeScript twin of main.bend: Levenshtein edit distance by
-// dynamic programming, single-threaded, 1-to-1 with the Bend program:
+// Native TypeScript twin of main.curve: Levenshtein edit distance by
+// dynamic programming, single-threaded, 1-to-1 with the Curve program:
 // the same xorshift symbol streams (sequences are Uint8Arrays), the
 // same two rolling Uint32Array rows swapping roles after every row,
 // the same min chain and cost test per cell, and the same checksum

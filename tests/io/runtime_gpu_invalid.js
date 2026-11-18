@@ -2,18 +2,18 @@ function runtime_gpu_invalid() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-runtime-gpu-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-runtime-gpu-"));
   try {
-    const input = path.join(dir, "main.bend");
+    const input = path.join(dir, "main.curve");
     const output = path.join(dir, "main.cjs");
     fs.writeFileSync(input,
       'import Base\ndef main() -> IO(Unit):\n  IO.print("ran")\n');
     const bun = typeof Bun !== "undefined";
     const compiled = bun && Bun.main.startsWith("/$bunfs/");
-    const prefix = compiled ? [] : [path.resolve("bend2/main.ts")];
+    const prefix = compiled ? [] : [path.resolve("curve2/main.ts")];
     const built = child.spawnSync(bun ? process.execPath : "bun",
       [...prefix, input, "-o", output], {
-        encoding: "utf8", env: { ...process.env, BEND_NO_TELEMETRY: "1" },
+        encoding: "utf8", env: { ...process.env, CURVE_NO_TELEMETRY: "1" },
       });
     if (built.status !== 0) {
       throw built.error ?? new Error(built.stderr);
@@ -26,7 +26,7 @@ require(${JSON.stringify(output)});`;
       encoding: "utf8", timeout: 3000,
     });
     return ran.status === 1 && ran.stdout === "" && ran.stderr
-      === "bend: expected on, off or a size like 4GB after --gpu\n" ? 0 : 1;
+      === "curve: expected on, off or a size like 4GB after --gpu\n" ? 0 : 1;
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

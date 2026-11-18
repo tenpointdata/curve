@@ -2,9 +2,9 @@ function constructor_interchange() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-constructor-interchange-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-constructor-interchange-"));
   try {
-    fs.writeFileSync(path.join(dir, "a.bend"), `import Base
+    fs.writeFileSync(path.join(dir, "a.curve"), `import Base
 
 type Counter is Data:
   Counter{count: Nat}
@@ -23,8 +23,8 @@ def Choice.right() -> Choice: Right{7n}
 def Flag.off() -> Flag: Off{}
 def Flag.on() -> Flag: On{}
 `);
-    fs.writeFileSync(path.join(dir, "b.bend"), `import Base
-import ./a.bend as A
+    fs.writeFileSync(path.join(dir, "b.curve"), `import Base
+import ./a.curve as A
 
 def dec(c: A.Counter) -> Nat:
   A.Counter{count} = c
@@ -43,13 +43,13 @@ def flag(c: A.Flag) -> U32:
     const bun = typeof Bun !== "undefined";
     const command = bun ? process.execPath : "bun";
     const prefix = bun && Bun.main.startsWith("/$bunfs/")
-      ? [] : [path.resolve("bend2/main.ts")];
+      ? [] : [path.resolve("curve2/main.ts")];
     for (const name of ["a", "b"]) {
       const built = child.spawnSync(command,
-        [...prefix, path.join(dir, name + ".bend"),
+        [...prefix, path.join(dir, name + ".curve"),
           "-o", path.join(dir, name + ".mjs")], {
           encoding: "utf8",
-          env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+          env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
         });
       if (built.status !== 0) {
         throw built.error ?? new Error(built.stderr);

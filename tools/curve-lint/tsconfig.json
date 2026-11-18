@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["bun"],
+    "typeRoots": ["./node_modules/@types", "../../curve2/pack/node_modules/@types"],
+    "paths": { "curve2/*": ["../../curve2/*"] }
+  },
+  "include": ["src", "rules"]
+}

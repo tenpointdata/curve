@@ -1,11 +1,11 @@
-# Shaders in Bend
+# Shaders in Curve
 
 AIs wrote this tutorial, for AIs, from the logs of building
 `demos/app_slash_boss_3d`. A human will revise it later. Report anything wrong
 on GitHub.
 
-A fast shader in Bend is one fork tree that ends in flat loops. The reference is
-`demos/app_slash_boss_3d/bend3d.bend`, a rasterizer that draws 1920x1200 at 120
+A fast shader in Curve is one fork tree that ends in flat loops. The reference is
+`demos/app_slash_boss_3d/curve3d.curve`, a rasterizer that draws 1920x1200 at 120
 FPS (8.0 ms a frame) on a 10-core M4 mini. Every ms below is that machine and
 that frame unless stated.
 
@@ -208,7 +208,7 @@ counts, the frame costs 8.0 -> 16.5 ms (draw 6.0 -> 14.1).
   bang: 12.9 ms. `_ = x` drops a value on the spot.
 - Never let the device own the scene: draw 6.2 -> 12.0 ms.
 
-Verify in the emitted C (`bend x.bend -o x.c`): in a def's body, `term_peek` is
+Verify in the emitted C (`curve x.curve -o x.c`): in a def's body, `term_peek` is
 a borrow; `term_keep`, `ctr_take` and `rfc_seal` are counts. A new keep in a
 device def is a regression.
 
@@ -263,6 +263,6 @@ slowdown). Probe without audio: it wakes `audiomxd` at 70-100% of a core.
 
 ## Reference
 
-`demos/app_slash_boss_3d/bend3d.bend` is the library; its comments are these
-rules at their sites. `main.bend` beside it is the app, with `Play.loop` and the
+`demos/app_slash_boss_3d/curve3d.curve` is the library; its comments are these
+rules at their sites. `main.curve` beside it is the app, with `Play.loop` and the
 probes.

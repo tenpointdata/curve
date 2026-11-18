@@ -1,0 +1,34 @@
+# bend3's C27 let a def between an assert and its fill call the
+# asserted name; curve refuses by design -- a def may not use a
+# demanded name (only asserts may); the refusal names the file order
+import Base
+
+law foo:
+  for x: U32
+  U32
+
+law bar:
+  U32
+
+def bar():
+  foo(1)
+
+def foo(x):
+  x
+
+law main:
+  U32
+
+def main():
+  0
+
+#|SOME PROOFS FAIL
+#|Error:
+#|- expected : a def whose body is implemented before the def is used (defs are checked in file order, and an unfilled law has none)
+#|- observed : foo
+#|Location: bar
+#|13 | def bar():
+#|14>|   foo(1)
+#|   |   ^^^
+#|15 |
+#|exit 1

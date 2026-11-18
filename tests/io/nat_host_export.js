@@ -2,9 +2,9 @@ function nat_host_export() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-nat-export-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-nat-export-"));
   try {
-    const input = path.join(dir, "lib.bend");
+    const input = path.join(dir, "lib.curve");
     const output = path.join(dir, "lib.mjs");
     fs.writeFileSync(input, `import Base
 
@@ -18,15 +18,15 @@ def add(a: Nat, b: Nat) -> Nat:
   Nat.add(a, b)
 `);
     const built = child.spawnSync(process.execPath,
-      [path.resolve("bend2/main.ts"), input, "-o", output], {
+      [path.resolve("curve2/main.ts"), input, "-o", output], {
         encoding: "utf8",
-        env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+        env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
       });
     if (built.status !== 0) {
       return 1;
     }
     const lib = require(output).default;
-    const err = "bend: expected a Nat host number: an integer from 0 to 2^53";
+    const err = "curve: expected a Nat host number: an integer from 0 to 2^53";
     const bad = [() => lib.inc(-1), () => lib.inc(1.5), () => lib.inc(1n),
       () => lib.inc(2 ** 53 + 2), () => lib.add(1)(-1),
       () => lib.identity(Infinity), () => lib.identity(NaN)];

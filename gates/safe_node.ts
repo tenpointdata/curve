@@ -1,6 +1,6 @@
-// safe.ts's node side: runs `bend <f> --verdict` on each file named on
+// safe.ts's node side: runs `curve <f> --verdict` on each file named on
 // stdin, PAR at a time, each capped at CAP s, and prints one JSON array
-// of Got. On a mismatch (bend2 checks, the kernel does not), diagnostic
+// of Got. On a mismatch (curve2 checks, the kernel does not), diagnostic
 // says why: the defs `-o` leaves out of scope, or else the kernel's error
 // on the translation, with the failing call if live. ms times the verdict
 // only; a failed diagnostic never changes it, and an infrastructure error
@@ -40,7 +40,7 @@ export function judge(g: Got): [string, string] {
       .flatMap((m) => m[1].split(", ")).slice(0, 3).join(" ")];
   }
   if (!out.includes("Sorry - ")) {
-    return [" ", "bend2 rejects: " + out.split("\n").slice(1, 3).join(" ").slice(0, 80)];
+    return [" ", "curve2 rejects: " + out.split("\n").slice(1, 3).join(" ").slice(0, 80)];
   }
   const tt = g.diagnostic ?? out;
   if (tt.startsWith("out of scope")) {
@@ -50,15 +50,15 @@ export function judge(g: Got): [string, string] {
   return ["!", tt.split("\n").slice(1, 3).join(" | ").slice(0, 300)];
 }
 
-// a check's deadline kills its whole process group: bend2 runs the
-// kernel as its child, and a SIGKILL to bend2 alone left the kernel
+// a check's deadline kills its whole process group: curve2 runs the
+// kernel as its child, and a SIGKILL to curve2 alone left the kernel
 // running, orphaned, while the next check started. Each check leads its
 // own group (detached), which the kernel joins; one kill(-pid) reaches
 // all of it at once, and no pid is reused while its group has a member.
 // live maps a group to the check that leads it, from its spawn to its
 // close, so a group a check left is never signalled under its pid. If
 // the group kill fails but the group exists (ESRCH says it is empty),
-// bend2 alone is killed, as before
+// curve2 alone is killed, as before
 const live = new Map<number, child.ChildProcess>();
 
 function kill_group(kid: child.ChildProcess): boolean {
@@ -78,7 +78,7 @@ async function run(bin: string, args: string[], cap: number): Promise<Omit<Got, 
   const t0 = Date.now();
   await new Promise<void>((done) => {
     const kid = child.spawn(bin, args,
-      { env: { ...process.env, BEND_NO_TELEMETRY: "1" }, detached: true });
+      { env: { ...process.env, CURVE_NO_TELEMETRY: "1" }, detached: true });
     if (kid.pid !== undefined) {
       live.set(kid.pid, kid);
     }
@@ -106,17 +106,17 @@ async function run(bin: string, args: string[], cap: number): Promise<Omit<Got, 
 }
 
 async function one(f: string, cap: number): Promise<Got> {
-  const g: Got = { f, ...await run(process.execPath, ["bend2/main.ts", f, "--verdict"], cap) };
-  if (g.out.includes("Error: BendTT infrastructure:")) {
+  const g: Got = { f, ...await run(process.execPath, ["curve2/main.ts", f, "--verdict"], cap) };
+  if (g.out.includes("Error: CurveTT infrastructure:")) {
     g.error = g.out.trim();
   }
   if (!g.timeout && !g.error && g.out.includes("Sorry - ")) {
     const t1 = Date.now();
     let dir: string | undefined;
     try {
-      dir = fs.mkdtempSync(path.join(os.tmpdir(), "bend-safe-"));
-      const tt = path.join(dir, "diagnostic.bendtt");
-      const emitted = await run(process.execPath, ["bend2/main.ts", f, "-o", tt], 20000);
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), "curve-safe-"));
+      const tt = path.join(dir, "diagnostic.curvett");
+      const emitted = await run(process.execPath, ["curve2/main.ts", f, "-o", tt], 20000);
       if (emitted.error || emitted.timeout || emitted.code !== 0) {
         throw new Error("elaboration diagnostic: " + (emitted.error ?? (emitted.out.trim()
           || "exit " + emitted.code + ", signal " + emitted.signal)));
@@ -124,7 +124,7 @@ async function one(f: string, cap: number): Promise<Got> {
       if (emitted.out.trim() !== "") {
         g.diagnostic = "out of scope\n" + emitted.out.trim();
       } else {
-        const kernel = await run(process.env.BENDTT ?? "", [tt], 20000);
+        const kernel = await run(process.env.CURVETT ?? "", [tt], 20000);
         if (kernel.error || kernel.timeout || kernel.code === null
           || (kernel.code !== 0 && !kernel.out.startsWith("SOME PROOFS FAIL"))) {
           throw new Error("kernel diagnostic: " + (kernel.error ?? (kernel.out.trim()

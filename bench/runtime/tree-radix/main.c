@@ -1,4 +1,4 @@
-// Native C twin of main.bend: same trie sort (gen -> to_map/merge
+// Native C twin of main.curve: same trie sort (gen -> to_map/merge
 // -> to_arr) and Chk verification scan, single-threaded. Nullary ctors
 // (Emp, Free, Busy) and Single (24-bit payload) are immediate tagged
 // words; only Concat and Mnode allocate, as 8-byte {l,r} pairs in index

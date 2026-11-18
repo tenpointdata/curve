@@ -3,7 +3,7 @@ let prompt_flushed = false;
 function prompt_input() {
   const fs = require("node:fs");
   const path = require("node:path");
-  const dir = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "bend-read-prompt-"));
+  const dir = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "curve-read-prompt-"));
   let fd;
   try {
     const file = path.join(dir, "input");

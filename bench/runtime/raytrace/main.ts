@@ -1,11 +1,11 @@
-// Single-threaded TypeScript twin of main.bend.
+// Single-threaded TypeScript twin of main.curve.
 // Same scene of 9 spheres + one point light at (-3,8,1), same 2x2
 // supersampled pixels, nearest-hit + Lambertian shadow shading +
 // mirror bounce on a countdown depth (4). ray_trace is in the bench's
 // accumulator form: per bounce acc' = acc + ((w*lum)*(1-kr)), w' =
 // w*kr, final level adds acc + (w*lum); nearest folds spheres 8 down
 // to 0 with strict <. Math.fround at every primitive operation
-// preserves Bend's one-operation f32 semantics; the Bend row-fork
+// preserves Curve's one-operation f32 semantics; the Curve row-fork
 // reduction is a plain row loop (u32 wrapping sum).
 // Expected at ROWS=12, WIDTH=6000: 1924309504 (ROWS=6, WIDTH=80:
 // 402971).
@@ -174,7 +174,7 @@ function benchmark_run(): number {
     hw = Math.fround(Math.trunc(WIDTH / 2)),
     hh = Math.fround(Math.trunc(h / 2));
   let acc = 0;
-  // the Bend fork tree permutes row/column indices by odd multipliers
+  // the Curve fork tree permutes row/column indices by odd multipliers
   // (bijections: same pixel set, same u32 sum); mirrored here
   for (let yj = 0; yj < h; ++yj) {
     const y = (Math.imul(yj, 1588635697) & (h - 1)) >>> 0;

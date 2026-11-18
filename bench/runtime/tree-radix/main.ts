@@ -1,4 +1,4 @@
-// TypeScript twin of main.bend: same trie sort (gen ->
+// TypeScript twin of main.curve: same trie sort (gen ->
 // to_map/merge -> to_arr) and Chk verification scan, single-threaded.
 // ADT nodes are class instances (monomorphic shapes); the GC plays the
 // role of the linear frees.

@@ -1,11 +1,11 @@
--- Single-threaded Lean twin of main.bend. Same
+-- Single-threaded Lean twin of main.curve. Same
 -- scene of 9 spheres + one point light at (-3,8,1), same 2x2
 -- supersampled pixels, nearest-hit + Lambertian shadow shading +
 -- mirror bounce on a countdown depth (4). ray_trace is in the bench's
 -- accumulator form: per bounce acc' = acc + ((w*lum)*(1-kr)), w' =
 -- w*kr, final level adds acc + (w*lum); nearest folds spheres 8 down
 -- to 0 with strict <. Float32 operations preserve the source
--- program's one-operation f32 semantics; the Bend row-fork reduction
+-- program's one-operation f32 semantics; the Curve row-fork reduction
 -- is a plain row loop (UInt32 wrapping sum).
 -- Expected at imageRows=12, imageWidth=6000: 1924309504 (imageRows=6,
 -- imageWidth=80: 402971).
@@ -90,7 +90,7 @@ def benchmark_run : UInt32 := Id.run do
   let halfWidth:=(width/2).toFloat32
   let halfHeight:=(height/2).toFloat32
   let mut total : UInt32 := 0
-  -- the Bend fork tree permutes row/column indices by odd multipliers
+  -- the Curve fork tree permutes row/column indices by odd multipliers
   -- (bijections: same pixel set, same u32 sum); mirrored here
   for yj in [0:height.toNat] do
     let y := (UInt32.ofNat yj * 1588635697) &&& (height - 1)

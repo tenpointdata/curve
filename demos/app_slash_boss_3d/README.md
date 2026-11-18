@@ -1,7 +1,7 @@
 # Slash Boss 3D
 
-A one-on-one duel in 3D, written in Bend over the Bend3D library
-([`bend3d.bend`](bend3d.bend)): you, THE BLADE, against THE SEVERANT.
+A one-on-one duel in 3D, written in Curve over the Curve3D library
+([`curve3d.curve`](curve3d.curve)): you, THE BLADE, against THE SEVERANT.
 WASD or the arrows move, I jumps, J and K attack, L guards or dodges,
 P pauses, R restarts, Esc quits. The game builds its scene each frame,
 mixes its own sound, and ships laws over the pure sim.
@@ -11,10 +11,10 @@ or `../../media/slash_boss_3d`, so the working directory must be the repo
 root or this directory):
 
 ```
-bend demos/app_slash_boss_3d/main.bend -o slash && ./slash
+curve demos/app_slash_boss_3d/main.curve -o slash && ./slash
 ```
 
-**Laws** ([`LAWS.bend`](LAWS.bend), proved in [`PROOF.bend`](PROOF.bend)):
+**Laws** ([`LAWS.curve`](LAWS.curve), proved in [`PROOF.curve`](PROOF.curve)):
 a pause freezes the world for any number of ticks, the loop's ticks are
 the game's and a frame runs the ticks it owes (60 a second of at most
 100 ms), a frame whose events end the game ends the loop, P twice restores the pause state of any game, an Esc anywhere
@@ -23,12 +23,12 @@ the game and a frame with no events keeps it as it is, and the game's
 countdown is the spec's; plus closed sanity facts about the route back to the
 title, the pause toggle, the countdown floor and the arrow keys. What the
 laws measure with (n ticks, the ticks a frame owes, n fades, a frame's
-events joined) is in [`SPEC.bend`](SPEC.bend). Keep it fixed with
-`LAWS.bend` when rewriting the game or its proofs: a claim must not rely
+events joined) is in [`SPEC.curve`](SPEC.curve). Keep it fixed with
+`LAWS.curve` when rewriting the game or its proofs: a claim must not rely
 on an editable helper to say what it means. The loop laws read only the
 game a frame leaves: the rest of the loop's state and its IO are not
-pinned, and the top of `LAWS.bend` lists what the laws leave open.
-Check: `bend PROOF.bend`.
+pinned, and the top of `LAWS.curve` lists what the laws leave open.
+Check: `curve PROOF.curve`.
 
 ## Audio
 

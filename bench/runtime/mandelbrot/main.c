@@ -1,4 +1,4 @@
-// Native C translation of main.bend: histogram-equalized
+// Native C translation of main.curve: histogram-equalized
 // escape-time render, 4096x4096, signed 8.8 fixed point, ITERS
 // branchless iterations per pixel (z freezes at escape).
 #include <stdint.h>

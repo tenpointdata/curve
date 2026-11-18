@@ -1,0 +1,6 @@
+import ./ops_own_lib.curve as L
+
+def main() -> L.Bool:
+  L.t(L.W{}, L.W{}, L.W{}, L.W{})
+
+#|ops_own_lib.True{}

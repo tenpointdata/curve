@@ -1,6 +1,6 @@
--- Lean twin of main.bend: same template generator into a ByteArray,
+-- Lean twin of main.curve: same template generator into a ByteArray,
 -- same three-mode tokenizer as a fold over the line's bytes, same
--- checksum, single-threaded. UInt32 wraps like Bend words.
+-- checksum, single-threaded. UInt32 wraps like Curve words.
 def DEPTH : Nat := 23
 
 def TPL : ByteArray := "i = ( n o i ) o ( n o i ) o ( n o i ) ;".toUTF8

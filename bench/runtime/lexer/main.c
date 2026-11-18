@@ -1,11 +1,11 @@
-// Native C twin of main.bend: same generator (the template expanded
+// Native C twin of main.curve: same generator (the template expanded
 // placeholder by placeholder from a salted xorshift stream), same
 // tokenizer (identifier by FNV-1a, number in decimal, operator or
 // punctuation by its code, spaces skipped), same checksum (tokens
 // folded in order per line, lines summed), single-threaded. Each line
 // lives in one stack byte buffer, and the tokenizer runs as nested
 // loops over it, one inner loop per token class: the same work as
-// main.bend's mode machine, one classification and one arithmetic
+// main.curve's mode machine, one classification and one arithmetic
 // step per byte, one mix per token.
 #include <stdint.h>
 #include <stdio.h>

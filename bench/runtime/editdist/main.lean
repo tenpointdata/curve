@@ -1,5 +1,5 @@
--- Native Lean twin of main.bend: Levenshtein edit distance by dynamic
--- programming, single-threaded, 1-to-1 with the Bend program: the same
+-- Native Lean twin of main.curve: Levenshtein edit distance by dynamic
+-- programming, single-threaded, 1-to-1 with the Curve program: the same
 -- xorshift symbol streams (sequences are ByteArrays), the same two
 -- rolling Array UInt32 rows swapping roles after every row (updated in
 -- place while uniquely referenced), the same min chain and cost test

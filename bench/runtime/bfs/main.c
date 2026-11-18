@@ -1,5 +1,5 @@
-// Native C twin of main.bend: breadth-first search over 2^DEPTH
-// independent 32x32 grid mazes, single-threaded, 1-to-1 with the Bend
+// Native C twin of main.curve: breadth-first search over 2^DEPTH
+// independent 32x32 grid mazes, single-threaded, 1-to-1 with the Curve
 // program: same seed and wall hash, a flat uint32 grid (1 open, 0
 // wall), a flat uint32 queue with head and tail, a flat uint32 distance
 // map seeded unseen, the textbook pop loop with four bounds-checked

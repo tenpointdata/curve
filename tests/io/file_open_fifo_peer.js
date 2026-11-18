@@ -28,7 +28,7 @@ function peer_arm() {
   const p = new Int32Array(2);
   if (lib.mkfifo(Buffer.from(path + "\0"), 0o600) !== 0
     || lib.pipe(sys.ptr(p)) !== 0) {
-    throw "bend: peer_arm: the FIFO or pipe failed";
+    throw "curve: peer_arm: the FIFO or pipe failed";
   }
   sys.fcntl(p[1], 2, 1);
   Bun.spawn(["sh", "-c", PEER_SH, "sh", path],

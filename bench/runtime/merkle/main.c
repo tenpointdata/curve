@@ -1,4 +1,4 @@
-// Native C twin of main.bend: same Speck32/64 leaf stream, Merkle
+// Native C twin of main.curve: same Speck32/64 leaf stream, Merkle
 // tree build (arena Mt nodes), audit re-fold, scalar-prover proof
 // extraction and proof verification, single-threaded.
 #include <stdint.h>

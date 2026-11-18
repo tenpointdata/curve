@@ -1,4 +1,4 @@
-// Native TypeScript twin of main.bend: recursive block matrix multiply
+// Native TypeScript twin of main.curve: recursive block matrix multiply
 // over quad-trees with a Freivalds verification pass. Same datatypes,
 // algorithms and wrapping-u32 numerics (imul + >>>0).
 const word_wrap = (value: number): number => value >>> 0;
@@ -141,7 +141,7 @@ function round_run(d: number, s: number): number {
 }
 
 // batch over the round index space: round i runs on seed = hashed index
-// (u32 addition commutes, so the flat loop equals the Bend fork tree)
+// (u32 addition commutes, so the flat loop equals the Curve fork tree)
 function batch_run(nchain: number, d: number): number {
   let acc = 0;
   for (let i = 0; i < nchain; i++) {

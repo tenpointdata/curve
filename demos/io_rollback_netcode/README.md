@@ -1,17 +1,17 @@
-# Rollback netcode in Bend
+# Rollback netcode in Curve
 
-Input-synced rollback netcode for Bend games over the UDP effect kit.
+Input-synced rollback netcode for Curve games over the UDP effect kit.
 You write an offline game as a pure `step(state, inputs) -> state` with a
 text codec for its inputs, and it plays online: every client folds the
 same stream of server-stamped inputs through the same step, so every
 client computes the same state. Your own inputs apply at once as
 predictions; a late input rolls the state back and replays.
 
-    netcode.bend        the library: the Client (a Game record in, the
+    netcode.curve        the library: the Client (a Game record in, the
                         local and remote states out) and the Server
-    server.bend         runs the relay                   PORT=7777
-    walkers_demo.bend   the demo: colored squares on a torus, in a window
-    walkers_test.bend   the demo played headless by a script: the test
+    server.curve         runs the relay                   PORT=7777
+    walkers_demo.curve   the demo: colored squares on a torus, in a window
+    walkers_test.curve   the demo played headless by a script: the test
 
 ## Run
 
@@ -22,12 +22,12 @@ puts it; WASD or the arrows move it; Esc quits. The id is the clock at
 launch (or PID); SERVER=127.0.0.1 PORT=7777 ROOM=lobby are the
 defaults.
 
-    bend demos/io_rollback_netcode/server.bend -o relay && ./relay
-    bend demos/io_rollback_netcode/walkers_demo.bend -o walkers && ./walkers
+    curve demos/io_rollback_netcode/server.curve -o relay && ./relay
+    curve demos/io_rollback_netcode/walkers_demo.curve -o walkers && ./walkers
 
 Headless test: two players that must print the same three lines.
 
-    bend demos/io_rollback_netcode/walkers_test.bend -o bot
+    curve demos/io_rollback_netcode/walkers_test.curve -o bot
     PID=1 ROOM=t ./bot & PID=2 ROOM=t ./bot; wait
     # posts=64 tick=900 hash=...     (the same three lines from each)
     # posts=64 tick=1200 hash=...
@@ -44,7 +44,7 @@ SERVER pointing at the relay to test the clock sync too; a bot built to
 ## Writing a game
 
 ```python
-import ./netcode.bend as Net
+import ./netcode.curve as Net
 
 def My.game() -> Net.Game<Input, State>:
   Net.Game{My.step, Input.read, Input.show, 60n, 200n}  # rate, tolerance ms
@@ -58,7 +58,7 @@ def My.game() -> Net.Game<Input, State>:
 - `Net.Client.frame(~.., c)` once per frame answers `c & local & remote`:
   the state now with your predictions, and a past state no late input
   can change. Draw yourself from local and the others from remote
-  (`World.blend` in walkers_demo.bend). Post your inputs before the
+  (`World.blend` in walkers_demo.curve). Post your inputs before the
   frame, so they show in it.
 - `Net.Client.post(~.., c, input)` predicts an input and sends it.
 - `Net.Client.close(Input, State, c)`.

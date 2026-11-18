@@ -1,8 +1,8 @@
--- Single-threaded Lean twin of main.bend. Same
+-- Single-threaded Lean twin of main.curve. Same
 -- algorithms over the same expression-tree ADT: expr_gen materializes
 -- each depth-5 candidate AST from the xorshift32 stream (inductive
 -- Expr), expr_eval is the recursive pattern-matching interpreter
--- (Bend's eval walks the tree; value recursion, order and u32
+-- (Curve's eval walks the tree; value recursion, order and u32
 -- numerics are identical), expr_size adds the
 -- parsimony penalty, batch_run folds the tournament, seed_climb
 -- hill-climbs the winner. All UInt32.

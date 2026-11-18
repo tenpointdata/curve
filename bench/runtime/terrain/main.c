@@ -1,5 +1,5 @@
-// Native C twin of main.bend: procedural terrain tile pipeline.
-// Single-threaded, 1-to-1 with the Bend program: same value-noise fill,
+// Native C twin of main.curve: procedural terrain tile pipeline.
+// Single-threaded, 1-to-1 with the Curve program: same value-noise fill,
 // in-place Gauss-Seidel relaxation sweeps with pass-salted roughening,
 // 64-bin histogram and position-weighted folds, wrapping-u32 numerics.
 #include <stdint.h>
@@ -55,7 +55,7 @@ static void erode_cell(uint32_t i, uint32_t p, uint32_t *h) {
   h[i] = ((hc * 4u + hl + hr + hu + hd) >> 3u) + rough;
 }
 
-// four cells per erode turn, as in the Bend twin's erode.go quad
+// four cells per erode turn, as in the Curve twin's erode.go quad
 static void erode_go(uint32_t i, uint32_t p, uint32_t *h) {
   erode_cell(i, p, h);
   erode_cell(i + 1u, p, h);

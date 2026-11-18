@@ -1,9 +1,9 @@
-// Single-threaded TypeScript twin of main.bend. Same
+// Single-threaded TypeScript twin of main.curve. Same
 // algorithm, same shape: 4-row prefix decode + bitmask legality, then
 // the bitmask backtracker over the remaining rows threading per-branch
-// Stats{sols, nodes}; the Bend fork tree's smerge reduction is a plain
+// Stats{sols, nodes}; the Curve fork tree's smerge reduction is a plain
 // sum over the prefix index space. Same recursive backtracker as the
-// Bend bench. Checksum = (sols * 2654435761) ^ nodes.
+// Curve bench. Checksum = (sols * 2654435761) ^ nodes.
 // Expected at SIZE=17, LIMIT=11730: 2063750025 (SIZE=8, LIMIT=512:
 // 2027808349).
 const SIZE = 17,

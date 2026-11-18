@@ -1,5 +1,5 @@
-// Native C twin of main.bend: Levenshtein edit distance by dynamic
-// programming, single-threaded, 1-to-1 with the Bend program: the
+// Native C twin of main.curve: Levenshtein edit distance by dynamic
+// programming, single-threaded, 1-to-1 with the Curve program: the
 // same xorshift symbol streams (sequences are byte strings), the same
 // two rolling uint32 rows swapping roles after every row, the same
 // min chain and cost test per cell, and the same checksum fold over

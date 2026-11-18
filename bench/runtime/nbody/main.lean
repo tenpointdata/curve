@@ -1,4 +1,4 @@
--- Native Lean translation of main.bend: chaotic three-body
+-- Native Lean translation of main.curve: chaotic three-body
 -- ensemble, Float32, Plummer-softened, symplectic Euler.
 def SY : Nat := 17
 def STEPS : Nat := 300

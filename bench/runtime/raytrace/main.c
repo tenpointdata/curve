@@ -1,15 +1,15 @@
-// Single-threaded C twin of main.bend. Same
+// Single-threaded C twin of main.curve. Same
 // scene of 9 spheres + one point light at (-3,8,1), same 2x2
 // supersampled pixels (four primary rays at (0.25,0.75) offsets),
 // nearest-hit + Lambertian shadow shading + mirror bounce on a
 // countdown depth (4). trace is in the bench's accumulator form: per
 // bounce acc' = acc + ((w*lum)*(1-kr)), w' = w*kr, final level adds
 // acc + (w*lum); nearest folds spheres 8 down to 0 with strict <. The
-// Bend row-fork reduction is a plain row loop here (u32 wrapping sum,
+// Curve row-fork reduction is a plain row loop here (u32 wrapping sum,
 // associative). All f32, one operation per statement order preserved.
 // Build: cc -O3 main.c -lm.
 // Expected at ROWS=12, WIDTH=6000: 1924309504 with -ffp-contract=off
-// (Bend's uncontracted f32 bits; plain -O3 fuses a*b+c into fma and
+// (Curve's uncontracted f32 bits; plain -O3 fuses a*b+c into fma and
 // prints 1924309520); ROWS=6, WIDTH=80: 402971.
 
 #include <stdint.h>
@@ -143,7 +143,7 @@ int main(void) {
   float    hw = (float)(w / 2);
   float    hh = (float)(h / 2);
   uint32_t acc = 0;
-  // the Bend fork tree permutes row/column indices by odd multipliers
+  // the Curve fork tree permutes row/column indices by odd multipliers
   // (bijections: same pixel set, same u32 sum); mirrored here
   for (uint32_t yj = 0; yj < h; yj++) {
     uint32_t y = (yj * 1588635697u) & (h - 1u);

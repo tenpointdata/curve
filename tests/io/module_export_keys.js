@@ -2,16 +2,16 @@ function module_export_keys() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-export-keys-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-export-keys-"));
   try {
-    const input = path.join(dir, "lib.bend");
+    const input = path.join(dir, "lib.curve");
     const output = path.join(dir, "lib.mjs");
-    fs.writeFileSync(path.join(dir, "dep.bend"), `import Base
+    fs.writeFileSync(path.join(dir, "dep.curve"), `import Base
 def value(x: U32) -> U32:
   U32.add(x, 10)
 `);
     fs.writeFileSync(input, `import Base
-import ./dep.bend as D
+import ./dep.curve as D
 
 def __proto__(x: U32) -> U32:
   U32.add(x, 1)
@@ -29,9 +29,9 @@ def dep.value(x: U32) -> U32:
   U32.add(x, 20)
 `);
     const built = child.spawnSync(process.execPath,
-      [path.resolve("bend2/main.ts"), input, "-o", output], {
+      [path.resolve("curve2/main.ts"), input, "-o", output], {
         encoding: "utf8",
-        env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+        env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
       });
     if (built.status !== 0) {
       return 1;

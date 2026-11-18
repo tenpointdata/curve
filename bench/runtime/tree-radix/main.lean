@@ -1,6 +1,6 @@
--- Lean twin of main.bend: same trie sort (gen -> to_map/merge ->
+-- Lean twin of main.curve: same trie sort (gen -> to_map/merge ->
 -- to_arr) and Chk verification scan, single-threaded. Keys are UInt32
--- (wrapping, like Bend words); depth counters are Nat pattern-matched
+-- (wrapping, like Curve words); depth counters are Nat pattern-matched
 -- structurally.
 inductive Arr where
   | empty

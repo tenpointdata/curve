@@ -4,23 +4,23 @@ function output_input_links() {
   const path = require("node:path");
   const child = require("node:child_process");
   // Outside the repo, so a run the alarm kills leaves no files in the tree.
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "bend-output-input-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "curve-output-input-"));
   const inputs = new Map([
-    ["main.bend", 'import Base\nimport ./lib.bend as Lib\n'
+    ["main.curve", 'import Base\nimport ./lib.curve as Lib\n'
       + 'def Probe.value() -> IO(U32):\n'
       + '  import "./effect.js"\n  import "./effect.c"\n'
       + 'def main() -> U32:\n  Lib.value()\n'],
-    ["lib.bend", "import Base\ndef value() -> U32:\n  42\n"],
+    ["lib.curve", "import Base\ndef value() -> U32:\n  42\n"],
     ["effect.js", "io_eff(CID(Probe.value), () => 42);\n"],
     ["effect.c", "// Foreign input.\n"],
   ].map(([name, text]) => [path.join(dir, name), text]));
-  const main = path.join(dir, "main.bend");
+  const main = path.join(dir, "main.curve");
   const options = { encoding: "utf8", timeout: 4000,
-    env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9",
-      BEND_NO_TELEMETRY: "1" },
+    env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9",
+      CURVE_NO_TELEMETRY: "1" },
   };
   const build = (...outs) => child.spawnSync(process.execPath,
-    [path.resolve("bend2/main.ts"), main, ...outs.flatMap((out) => ["-o", out])],
+    [path.resolve("curve2/main.ts"), main, ...outs.flatMap((out) => ["-o", out])],
     options);
   const intact = () => [...inputs].every(([file, text]) =>
     fs.readFileSync(file, "utf8") === text);
@@ -78,13 +78,13 @@ function output_input_links() {
     // A GPU archive is an output too, even though it has no -o.
     const bin = path.join(dir, "program");
     const cache = bin + ".gpu";
-    const entry = path.join(dir, "gpu.bend");
+    const entry = path.join(dir, "gpu.curve");
     const text = "import Base\ndef main() -> U32:\n  42\n";
     fs.unlinkSync(ok);
     fs.writeFileSync(cache, text);
     inputs.set(cache, text);
     fs.symlinkSync(cache, entry);
-    const got = child.spawnSync(process.execPath, [path.resolve("bend2/main.ts"),
+    const got = child.spawnSync(process.execPath, [path.resolve("curve2/main.ts"),
       entry, "-o", ok, "-o", bin], options);
     if (!rejects(got, "GPU output") || fs.existsSync(ok)
       || fs.existsSync(bin)) return code;

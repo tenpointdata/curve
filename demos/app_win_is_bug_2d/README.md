@@ -16,27 +16,27 @@ law you_cant_win:
 If you ever see the win screen, the type checker is broken. File a bug.
 
 A second law, `never_on_flag`, says the player never stands on an 'F' of
-the board the page draws, as [`BOARD.bend`](BOARD.bend) reads it, not as
+the board the page draws, as [`BOARD.curve`](BOARD.curve) reads it, not as
 the game reports it.
 
-**Play it:** https://bend-lang.com/#lab
+**Original upstream demo:** https://bend-lang.com/#lab
 
-## How to work with Bend
+## How to work with Curve
 
 This demo is a working example of the intended division of labor:
 
-- [`main.bend`](main.bend) — the **game**. The whole program, nothing
+- [`main.curve`](main.curve) — the **game**. The whole program, nothing
   else.
-- [`LAWS.bend`](LAWS.bend) — the **claims**. The human's file: it
+- [`LAWS.curve`](LAWS.curve) — the **claims**. The human's file: it
   imports the game and asserts what must be true about it. Asserts only;
   it proves nothing.
-- [`BOARD.bend`](BOARD.bend) — the specification's **board reader**. It
+- [`BOARD.curve`](BOARD.curve) — the specification's **board reader**. It
   reads `grid(map_h() - 1)`, just as the page does, and uses Base to locate
-  the flag. Keep it fixed with `LAWS.bend` when rewriting the game or its
+  the flag. Keep it fixed with `LAWS.curve` when rewriting the game or its
   proofs: a claim must not rely on an editable helper to say what it means.
-- [`PROOF.bend`](PROOF.bend) — the **proofs**. The AI's file: it must fill
-  every law it states — Bend rejects an unfilled law — so
-  `bend PROOF.bend` is the whole verification, and it fails the moment a
+- [`PROOF.curve`](PROOF.curve) — the **proofs**. The AI's file: it must fill
+  every law it states — Curve rejects an unfilled law — so
+  `curve PROOF.curve` is the whole verification, and it fails the moment a
   law stops holding.
 
 The human maintains the wall; the machine does anything it wants on the
@@ -48,10 +48,10 @@ There is no build script and no generated glue. The browser UI
 ([`web/main.js`](web/main.js)) imports the game directly:
 
 ```js
-import Game from "../main.bend";
+import Game from "../main.curve";
 ```
 
-The loader in [bend2/main.ts](../../bend2/main.ts) compiles `.bend`
+The loader in [curve2/main.ts](../../curve2/main.ts) compiles `.curve`
 imports on the fly — under bun (dev server and bundler) and under node
 (`node --import`). Every def becomes a function on
 `Game`; the UI asks `Game.grid` for the level and, on every keypress,
@@ -60,9 +60,9 @@ very term the laws are stated on. The browser never decides anything.
 
 ```bash
 cd web
-bun index.html              # serves the page, .bend imports and all
-bend index.html -o out      # bundles it (needs bend on the PATH)
-bend ../PROOF.bend          # every law must be filled
+bun index.html              # serves the page, .curve imports and all
+curve index.html -o out      # bundles it (needs curve on the PATH)
+curve ../PROOF.curve          # every law must be filled
 ```
 
 ## The level
@@ -94,5 +94,5 @@ certificate at arbitrary coordinates, and a safe cell is off the flag,
 because the flag's cell is in the room, so a step never sets `won`.
 `run_safe` carries the invariant through any list of moves and answers
 the final cell; both laws (never won, never on the flag) read off it. No
-axioms, no TODOs, no `unsafe`: `bend PROOF.bend` answers "ALL PROOFS
+axioms, no TODOs, no `unsafe`: `curve PROOF.curve` answers "ALL PROOFS
 CHECK".

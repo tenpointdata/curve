@@ -2,25 +2,25 @@ function bundle_inline() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-page-inline-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-page-inline-"));
   const run = (...args) => child.spawnSync(process.execPath, args, {
     encoding: "utf8",
-    env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+    env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
   });
   const put = (name, text) => fs.writeFileSync(path.join(dir, name), text);
-  const build = (page) => run(path.resolve("bend2/main.ts"),
+  const build = (page) => run(path.resolve("curve2/main.ts"),
     path.join(dir, page), "-o", path.join(dir, "out"));
   try {
-    put("m.bend", "import Base\n\nlaw main:\n  U32\n\ndef main():\n  42\n");
+    put("m.curve", "import Base\n\nlaw main:\n  U32\n\ndef main():\n  42\n");
     put("ok.html", '<svg><script type="module"/></svg>\n'
-      + '<script type="module">\nimport M from "./m.bend";\n'
+      + '<script type="module">\nimport M from "./m.curve";\n'
       + "console.log(M.main());\n</script>\n");
     put("bad.html", '<p>\n<script\n type="module">\nconst x = ;\n</script>\n');
     put("repeated.html", '<!--\n<script type="module">\nconst x = ;\n'
       + '</script>\n-->\n<script type="module">\nconst x = ;\n</script>\n');
     put("multi.html", '<svg><script type="module"/></svg>\n'
       + '<svg><script type="module"><![CDATA[\n]]></script></svg>\n'
-      + '<!-- BEND_INLINE_START_0_ -->\n'
+      + '<!-- CURVE_INLINE_START_0_ -->\n'
       + '<script type="module">\nconsole.log(1);\n</script>\n'
       + '<!--\nconst x = ;\n-->\n'
       + '<script type="module">\nconst x = ;\n</script>\n');
@@ -45,9 +45,9 @@ function bundle_inline() {
     if (multi.status !== 1 || !multi.stderr.includes("multi.html:12:11")) {
       return 5;
     }
-    put(".collision.html.bend-inline-0.js", 'console.log("asset");\n');
-    put("collision.html", '<script type="module" src="./.collision.html.bend-inline-0.js"></script>\n'
-      + '<script type="module">import M from "./m.bend"; console.log(M.main());</script>\n');
+    put(".collision.html.curve-inline-0.js", 'console.log("asset");\n');
+    put("collision.html", '<script type="module" src="./.collision.html.curve-inline-0.js"></script>\n'
+      + '<script type="module">import M from "./m.curve"; console.log(M.main());</script>\n');
     if (build("collision.html").status !== 0) {
       return 6;
     }
@@ -69,7 +69,7 @@ function bundle_inline() {
     // character references in the page name must not change that name.
     for (const page of ['quote"name.html', 'entity&quot;name.html',
       'percent%22 name.html', 'unicode-λ.html']) {
-      put(page, '<script type="module">import M from "./m.bend";'
+      put(page, '<script type="module">import M from "./m.curve";'
         + ' console.log(M.main());</script>\n');
       if (build(page).status !== 0) return 9;
       const built = fs.readFileSync(path.join(out, page), "utf8");
@@ -84,10 +84,10 @@ function bundle_inline() {
     put('bad"name.html', '<script type="module">\nconst x = ;\n</script>\n');
     const quoted = build('bad"name.html');
     if (quoted.status !== 1 || !quoted.stderr.includes('bad"name.html:2:11')) return 11;
-    put(".external.html.bend-inline-99.js", "const broken = ;\n");
-    put("external.html", '<script type="module" src="./.external.html.bend-inline-99.js"></script>\n');
+    put(".external.html.curve-inline-99.js", "const broken = ;\n");
+    put("external.html", '<script type="module" src="./.external.html.curve-inline-99.js"></script>\n');
     const external = build("external.html");
-    return external.status === 1 && external.stderr.includes(".external.html.bend-inline-99.js:1:16")
+    return external.status === 1 && external.stderr.includes(".external.html.curve-inline-99.js:1:16")
       ? 0 : 8;
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });

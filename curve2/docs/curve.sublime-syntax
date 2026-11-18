@@ -1,0 +1,50 @@
+%YAML 1.2
+---
+# Curve, for the papers' code blocks: typst reads this through
+# #set raw(syntaxes: ...) and highlights ```curve fences with it.
+name: Curve
+file_extensions: [curve]
+scope: source.curve
+
+contexts:
+  main:
+    - match: '#.*$'
+      scope: comment.line.number-sign.curve
+    - match: '"'
+      scope: punctuation.definition.string.begin.curve
+      push: string
+    - match: "'(\\\\.|[^'])'"
+      scope: string.quoted.single.curve
+    - match: '\b(def|law)\s+([A-Za-z_][A-Za-z0-9_.]*)'
+      captures:
+        1: keyword.control.curve
+        2: entity.name.function.curve
+    - match: '\b(type)\s+([A-Za-z_][A-Za-z0-9_]*)'
+      captures:
+        1: keyword.control.curve
+        2: entity.name.type.curve
+    - match: '\b(def|law|type|is|match|case|do|return|for|exs|where|import|as)\b'
+      scope: keyword.control.curve
+    - match: '@unsafe\b'
+      scope: keyword.control.curve
+    - match: '\b(Type|Data|Kind|Quant)\b'
+      scope: storage.type.curve
+    - match: '&[012]\b'
+      scope: constant.numeric.curve
+    - match: '\b\d+n\b'
+      scope: constant.numeric.curve
+    - match: '\b\d+(\.\d+([eE][+-]?\d+)?)?\b'
+      scope: constant.numeric.curve
+    - match: '\b[A-Z][A-Za-z0-9_]*\b'
+      scope: support.type.curve
+    - match: '\?[A-Za-z_][A-Za-z0-9_]*'
+      scope: variable.other.hole.curve
+    - match: '==|!=|<=|>=|->|=>|<-|<&>|\+\+|<>|[-+*/%<>=&|!@%\\]'
+      scope: keyword.operator.curve
+  string:
+    - meta_scope: string.quoted.double.curve
+    - match: '\\.'
+      scope: constant.character.escape.curve
+    - match: '"'
+      scope: punctuation.definition.string.end.curve
+      pop: true

@@ -1,5 +1,5 @@
--- Native Lean twin of main.bend: a histogram of R fresh batches of 2^D
--- keys into K = 256 buckets, single-threaded, 1-to-1 with the Bend
+-- Native Lean twin of main.curve: a histogram of R fresh batches of 2^D
+-- keys into K = 256 buckets, single-threaded, 1-to-1 with the Curve
 -- program: per round, the same key stream (seed 7 + r) filled block by
 -- block, the same two passes over the same 2^B x 256 table (pass 1
 -- zeroes and counts each block's row; pass 2 sums the columns, in two

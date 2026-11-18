@@ -2,9 +2,9 @@ function f32_host_export() {
   const fs = require("node:fs");
   const path = require("node:path");
   const child = require("node:child_process");
-  const dir = fs.mkdtempSync(path.join(process.cwd(), ".bend-f32-export-"));
+  const dir = fs.mkdtempSync(path.join(process.cwd(), ".curve-f32-export-"));
   try {
-    const input = path.join(dir, "lib.bend");
+    const input = path.join(dir, "lib.curve");
     const output = path.join(dir, "lib.mjs");
     fs.writeFileSync(input, `import Base
 
@@ -12,9 +12,9 @@ def add(a: F32, b: F32) -> F32:
   F32.add(a, b)
 `);
     const built = child.spawnSync(process.execPath,
-      [path.resolve("bend2/main.ts"), input, "-o", output], {
+      [path.resolve("curve2/main.ts"), input, "-o", output], {
         encoding: "utf8",
-        env: { ...process.env, HOME: dir, BEND_ORIGIN: "http://127.0.0.1:9" },
+        env: { ...process.env, HOME: dir, CURVE_ORIGIN: "http://127.0.0.1:9" },
       });
     if (built.status !== 0) {
       return 1;

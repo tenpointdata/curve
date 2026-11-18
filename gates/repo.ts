@@ -3,8 +3,8 @@
 // and the capped files below stay under their ttok caps. Anything else in
 // the tree is a failure.
 //
-// THE CAPS ARE PERMANENT: bend.ts 48k, comp.ts 66k, main.ts 16k, safe.ts
-// 24k, bendtt.lean 64k, README.md 4k, GUIDE.md 8k, and no other file has a
+// THE CAPS ARE PERMANENT: curve.ts 48k, comp.ts 66k, main.ts 16k, safe.ts
+// 24k, curvett.lean 64k, README.md 4k, GUIDE.md 8k, and no other file has a
 // cap. Do NOT raise, lower, add or remove a cap without Taelin's explicit
 // authorization. A file over its cap is made smaller by simplification,
 // never by moving code out.
@@ -39,57 +39,62 @@ allow(".github/workflows/repo-gate.yml");
 allow(".gitattributes");
 allow(".gitignore");
 allow("AGENTS.md");
+allow("CLAUDE.md");
+allow("HANDOFF.md");
+allow("scripts/build.sh");
+allow(/^optimization\/(README\.md|[a-z_]+(\.test)?\.(ts|curve))$/);
+allow(/^optimization\/adapters\/[a-z_]+\.(ts|py)$/);
 allow("CHANGELOG.md");
 allow("README.md", 4000);
 allow("WONTFIX.txt");
 allow("LICENSE");
 allow("flake.nix");
-allow("bend2/base.bend");
-allow("bend2/bend.ts", 48000);
-allow("bend2/comp.ts", 66000);
-allow("bend2/main.ts", 16000);
-allow("bend2/safe.ts", 24000);
-allow("bend2/bendtt.lean", 64000);
-allow(/^bend2\/effs\/[a-z0-9_]+\.(c|js)$/);
-allow(/^bend2\/pack\/(\.gitignore|package\.json|tsconfig\.json|bun\.lock)$/);
-allow(/^bend2\/docs\/(BendRT|BendTT)\/(main\.typ|refs\.bib)$/);
-allow("bend2/docs/bend.sublime-syntax");
-allow(/^bend2\/docs\/film\/(film\.ts|[a-z]+\.json)$/);
-allow("bend2/docs/gen_anim.ts");
-allow("bend2/docs/gen_charts.ts");
-allow("bend2/docs/gen_gifs.ts");
-allow("bend2/docs/gen_pins.ts");
-allow(/^bend2\/docs\/intro\/[a-z.]+$/);
-allow(/^bench\/checker\/[a-z]+_[0-9]+\/main\.(bend|agda|lean|thy|v)$/);
+allow("curve2/base.curve");
+allow("curve2/curve.ts", 48000);
+allow("curve2/comp.ts", 66000);
+allow("curve2/main.ts", 16000);
+allow("curve2/safe.ts", 24000);
+allow("curve2/curvett.lean", 64000);
+allow(/^curve2\/effs\/[a-z0-9_]+\.(c|js)$/);
+allow(/^curve2\/pack\/(\.gitignore|package\.json|tsconfig\.json|bun\.lock)$/);
+allow(/^curve2\/docs\/(BendRT|BendTT)\/(main\.typ|refs\.bib)$/);
+allow("curve2/docs/curve.sublime-syntax");
+allow(/^curve2\/docs\/film\/(film\.ts|[a-z]+\.json)$/);
+allow("curve2/docs/gen_anim.ts");
+allow("curve2/docs/gen_charts.ts");
+allow("curve2/docs/gen_gifs.ts");
+allow("curve2/docs/gen_pins.ts");
+allow(/^curve2\/docs\/intro\/[a-z.]+$/);
+allow(/^bench\/checker\/[a-z]+_[0-9]+\/main\.(curve|agda|lean|thy|v)$/);
 allow(/^bench\/checker\/_pin_\/[a-z0-9_]+\.txt$/);
-allow(/^bench\/runtime\/[a-z-]+\/main\.(bend|c|lean|ts)$/);
+allow(/^bench\/runtime\/[a-z-]+\/main\.(curve|c|lean|ts)$/);
 allow(/^bench\/runtime\/_pin_\/[a-z0-9_]+\.txt$/);
-allow(/^demos\/[a-z0-9_]+\/[A-Za-z0-9_]+\.bend$/);
+allow(/^demos\/[a-z0-9_]+\/[A-Za-z0-9_]+\.curve$/);
 allow(/^demos\/[a-z0-9_]+\/[A-Za-z_]+\.(c|sh|md)$/);
 allow(/^demos\/[a-z0-9_]+\/web\/(index\.html|main\.js|bunfig\.toml)$/);
 allow("guide/GUIDE.md", 8000);
 allow("guide/EFFECTS.md");
 allow("guide/SHADERS.md");
 allow(/^paper\/(BendRT|BendTT)\.pdf$/);
-allow(/^media\/intro\.(gif|mp4)$/);
+allow(/^media\/upstream\/(hero(_dark)?\.gif|(checker|runtime|intro)\.gif|intro\.mp4|logo_bend\.png)$/);
 allow("media/kind_devil_theorem.mp4");
 allow(/^media\/(runtime|checker|parallel)\.gif$/);
 allow(/^media\/hero(_dark)?\.gif$/);
-allow(/^media\/logo_(bend|hoc)\.png$/);
+allow(/^media\/logo_(curve|hoc)\.png$/);
 allow(/^media\/game_[a-z_]+\.gif$/);
 allow(/^media\/slash_boss_3d\/[a-z_]+\.wav$/);
 allow(/^gates\/(_lib|_run|perf|ping|repo|test|safe|safe_node|safe_diag)\.ts$/);
-allow(/^tests\/[a-z]+\/([a-z0-9-]+\/)?[A-Za-z0-9_]+\.bend$/);
+allow(/^tests\/[a-z]+\/([a-z0-9-]+\/)?[A-Za-z0-9_]+\.curve$/);
 allow(/^tests\/[a-z]+\/[a-z0-9_]+\.(c|js)$/);
-allow(/^tools\/bend-fmt-lsp\/(\.gitignore|README\.md|package\.json|package-lock\.json|tsconfig\.json)$/);
-allow(/^tools\/bend-fmt-lsp\/src\/(formatter|server)\.ts$/);
-allow(/^tools\/bend-fmt-lsp\/src\/test\/[a-z_]+\.test\.ts$/);
-allow(/^tools\/bend-cache\/(README\.md|package\.json|tsconfig\.json)$/);
-allow(/^tools\/bend-cache\/src\/(cache|cache\.test)\.ts$/);
-allow(/^tools\/bend-lint\/(README\.md|package\.json|tsconfig\.json)$/);
-allow(/^tools\/bend-lint\/src\/(lint\.ts|seam\.ts|lint\.test\.ts)$/);
-allow(/^tools\/bend-lint\/src\/bend\/(lint\.bend|effects\.js|sample\.bend)$/);
-allow(/^tools\/bend-lint\/rules\/[a-z_]+(\.test)?\.(ts|bend)$/);
+allow(/^tools\/curve-fmt-lsp\/(\.gitignore|README\.md|package\.json|package-lock\.json|tsconfig\.json)$/);
+allow(/^tools\/curve-fmt-lsp\/src\/(formatter|server)\.ts$/);
+allow(/^tools\/curve-fmt-lsp\/src\/test\/[a-z_]+\.test\.ts$/);
+allow(/^tools\/curve-cache\/(README\.md|package\.json|tsconfig\.json)$/);
+allow(/^tools\/curve-cache\/src\/(cache|cache\.test)\.ts$/);
+allow(/^tools\/curve-lint\/(README\.md|package\.json|tsconfig\.json)$/);
+allow(/^tools\/curve-lint\/src\/(lint\.ts|seam\.ts|lint\.test\.ts)$/);
+allow(/^tools\/curve-lint\/src\/curve\/(lint\.curve|effects\.js|sample\.curve)$/);
+allow(/^tools\/curve-lint\/rules\/[a-z_]+(\.test)?\.(ts|curve)$/);
 
 // Gate
 // ====

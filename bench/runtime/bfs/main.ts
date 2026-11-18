@@ -1,5 +1,5 @@
-// TypeScript twin of main.bend: breadth-first search over 2^DEPTH
-// independent 32x32 grid mazes, single-threaded, 1-to-1 with the Bend
+// TypeScript twin of main.curve: breadth-first search over 2^DEPTH
+// independent 32x32 grid mazes, single-threaded, 1-to-1 with the Curve
 // program: same seed and wall hash, a Uint32Array grid (1 open, 0
 // wall), a Uint32Array queue with head and tail, a Uint32Array distance
 // map seeded unseen, the textbook pop loop with four bounds-checked

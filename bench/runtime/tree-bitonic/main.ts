@@ -1,4 +1,4 @@
-// TypeScript twin of main.bend: same tree-shaped bitonic sorting
+// TypeScript twin of main.curve: same tree-shaped bitonic sorting
 // network, key generator and Stat verification scan, single-threaded.
 // Tree nodes are class instances (monomorphic shapes); the GC plays the
 // role of the linear frees.

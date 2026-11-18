@@ -1,0 +1,22 @@
+# bend3 loaded a cyclic file pair as one book; curve REFUSES cycles by
+# design (book_load's acyclic-graph law) -- the cycle itself needs a
+# second file the single-file corpus cannot hold, so the pinned half
+# is the eager leading-line load dying on its target
+import Base
+import /cycle/other_half.curve as C
+
+law main:
+  U32
+
+def main():
+  0
+
+#|SOME PROOFS FAIL
+#|Error:
+#|- message  : no such file: /cycle/other_half.curve
+#|Location:
+#|5 | import Base
+#|6>| import /cycle/other_half.curve as C
+#|  |        ^
+#|7 |
+#|exit 1
