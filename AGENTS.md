@@ -57,6 +57,9 @@ command resolve through `~/.local/bin`. Use the Composite Curve skill and
 Run `curve optimize --help` for constrained optimization and use the ledger
 to keep feasibility, ranking and method comparison separate.
 
+Curve branches and pull requests belong in `tenpointdata/curve`. Treat the
+upstream Bend repository as read-only.
+
 ## Handoff policy
 
 Any repository you work in must stay in a state where another agent (Claude, Codex, Gemini, Antigravity, or a human) can pick up the work cold, with no access to this conversation. Two things make that true, and you maintain both:
