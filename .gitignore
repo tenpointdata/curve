@@ -9,3 +9,5 @@ node_modules/
 *.sqlite-shm
 *.sqlite-wal
 *.sqlite-journal
+
+/demos/web_react/Generated.curve

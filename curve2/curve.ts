@@ -914,6 +914,14 @@ export const BASE_CURVE = fs.realpathSync(path.join(CURVE_DIR, "base.curve"));
 const CURVE_LIB = path.resolve(process.env.CURVE_LIB ?? path.join(os.homedir(), ".curve", "lib"));
 export const CURVE_HUB = process.env.CURVE_HUB ?? "";
 export const SOURCE_FILE = /\.(?:curve|bend)$/;
+const BUILTIN_WEB = new Map([["Web", "http.curve"], ["View", "view.curve"]]);
+const WEB_ROOT = path.resolve(CURVE_DIR, "..", "web");
+
+export function web_builtin(file: string): string | undefined {
+  return path.dirname(file) === WEB_ROOT
+    ? [...BUILTIN_WEB].find(([, name]) => name === path.basename(file))?.[0]
+    : undefined;
+}
 
 export const NAMED = /^([a-z][a-z0-9-]{0,63})@((?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){3})$/;
 
@@ -1001,10 +1009,23 @@ export async function book_load(book: Book, file: string, ns: string, seen: Map<
     const m   = /^import\s+(\S+)(?:\s+as\s+([A-Za-z_]\w*))?\s*(?:#.*)?$/.exec(line);
     const beg = at + lines[i].indexOf(m?.[1] ?? line);
     const sp  = { file: { str: text, ns, al }, beg, end: beg };
-    if (m === null || (m[2] === undefined && m[1] !== "Base")) {
-      throw Err(book, ctx_nil(), "an import ('import Base', or 'import <path> as <Name>')", "'" + line + "'", sp);
+    const web = m && BUILTIN_WEB.get(m[1]);
+    if (m === null || (m[2] === undefined && m[1] !== "Base" && !web)) {
+      throw Err(book, ctx_nil(), "an import (Base, Web, View, or <path> as <Name>)", "'" + line + "'", sp);
     }
     body[i] = "";
+    if (web && m[2] === undefined) {
+      if (m[1] in al) {
+        throw Err(book, ctx_nil(), "a fresh alias for " + m[1], undefined, sp);
+      }
+      const builtin = path.join(WEB_ROOT, web);
+      if (real === fs.realpathSync(builtin)) {
+        throw Err(book, ctx_nil(), "an import outside its own module", m[1], sp);
+      }
+      al[m[1]] = m[1];
+      await book_load(book, builtin, m[1], seen, sp);
+      continue;
+    }
     if (m[2] === undefined) {
       await book_load(book, BASE_CURVE, "", seen, sp);
       continue;
@@ -1033,8 +1054,9 @@ export async function book_load(book: Book, file: string, ns: string, seen: Map<
     if (!ok(sub, in_lib)) {
       throw bad(" (resolves to '" + (in_lib ? got.slice(lib.length) : path.posix.relative(dir, got)) + "')");
     }
-    al[m[2]] = sub;
-    await book_load(book, got, sub, seen, sp, top);
+    const builtin = web_builtin(got);
+    al[m[2]] = builtin ?? sub;
+    await book_load(book, got, al[m[2]], seen, sp, builtin ? undefined : top);
   }
   const n0 = book.order.length;
   parse_book(book, dir, body.join("\n"), ns, al);

@@ -42,6 +42,12 @@ Use `.curve` for new sources. The loader also accepts inherited `.bend` files
 and imports. For a project that pairs a `LAWS` file with `PROOF`, keep both at
 the same extension during migration.
 
+## Web applications
+
+Use `curve web serve` to run typed Curve routes over HTTP or HTTPS with Bun.
+Use `curve web jsx` to compile supported React components to checked Curve
+source, then bundle them with an HTML entry. See the [web guide](web/README.md).
+
 ## Constrained optimization
 
 ```sh

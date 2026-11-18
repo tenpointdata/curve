@@ -29,14 +29,18 @@ jobs:
       - name: main's gate files over this tree
         run: |
           git fetch --no-tags --depth=1 origin main
-          if git cat-file -e FETCH_HEAD:curve2/curve.ts; then
+          if git cat-file -e FETCH_HEAD:web/http.curve 2>/dev/null; then
             git archive FETCH_HEAD gates/repo.ts gates/_lib.ts | tar -xf -
           fi
       - run: bun gates/repo.ts
       - run: bun curve2/main.ts optimization/gate.curve --check-only
+      - run: bun install --cwd web --frozen-lockfile
+      - run: bun curve2/main.ts web jsx demos/web_react/App.tsx -o "$RUNNER_TEMP/Generated.curve"
+      - run: bun test --preload ./curve2/main.ts web/
       - run: bun test --preload ./curve2/main.ts optimization/optimization.test.ts
       - name: Verify source installation
         run: |
           sh scripts/build.sh "$RUNNER_TEMP/curve-install"
           "$RUNNER_TEMP/curve-install/bin/curve" --version
           "$RUNNER_TEMP/curve-install/bin/curve" optimize --help
+          "$RUNNER_TEMP/curve-install/bin/curve" web --help
