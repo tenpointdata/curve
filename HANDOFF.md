@@ -1,6 +1,6 @@
 # Curve handoff
 
-**Last updated:** 2026-11-18 10:19 MST, by codex-mcp-client: Rebranded the active Bend 2 checkout as Curve and implemented the whitepaper workflow as curve optimize. Earlier hand-offs are under Deltas and in `ej handoff log`.
+**Last updated:** 2026-11-18 10:36 MST, by codex-mcp-client: Merged the verified rebrand PR into tenpointdata/curve main and built the first web platform slice on a local feature branch. Earlier hand-offs are under Deltas and in `ej handoff log`.
 
 ## Handoff policy
 
@@ -32,16 +32,18 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 
 2026-11-18. Cloned `tenpointdata/curve` at upstream base `9c586f09` and migrated the active CLI, source files, package tooling, documentation and installation to Curve. The Mac's `curve` and compatibility `bend` launchers resolve to the checkout.
 
-The whitepaper workflow runs through `curve optimize`. Verified the repository gate, 136 linter checks, 37 formatter checks, 9 proof-cache checks, 6 optimization checks, the gate's Curve proofs, a native program, mixed legacy/current imports and source installation. TypeScript reported only the same three checker diagnostics reproduced at the upstream base. The independent Lean run and cluster gates are pending.
+The whitepaper workflow runs through `curve optimize`. Verified the repository gate, 136 linter checks, 37 formatter checks, 9 proof-cache checks, 6 optimization checks, the gate's Curve proofs, a native program, mixed legacy/current imports and source installation. TypeScript reported only the same three checker diagnostics reproduced at the upstream base. The optimization gate also passed the independent CurveTT verdict using pinned Lean 4.34.0 on the Mac. Cluster and hosted release checks are pending.
 
 The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.391350647 g among 33 passing designs, and the 47 failed designs received no ranking. Replay was idempotent, and a tampered receipt was rejected before import. Provisional frame summaries are verified against their own receipts and search contract and reported separately. Their qualification remains unestablished.
+
+Composite owns the shared Curve policy and skill. The Mac's `~/.local/bin/curve` launcher uses the local checkout and both `bend` paths forward to it. The retired standalone installation is recoverable from Trash. The installed Composite MCP server can return the skill, and the local harness launch environments resolve both commands. No remote workers are configured.
 
 ## Triage
 
 ### Agents
 
 - Add a live native evaluator adapter. Small integration after the evaluator's retry semantics are pinned. Done when an interrupted bounded run resumes from exact pending request and result identities without duplicate work or unaccounted spend.
-- Run independent verification and release checks. Medium. Done when the pinned Lean kernel verifies the gate and authorized target environments pass their applicable release checks.
+- Run release checks. Medium. Done when authorized target environments pass their applicable release checks.
 
 ### Human
 
@@ -49,11 +51,11 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 
 ### Blocked
 
-- Hosted ping requires a configured Curve registry and release service. Cluster gates require an authorized runner. The independent kernel needs the pinned Lean toolchain.
+- Hosted ping requires a configured Curve registry and release service. Cluster gates require an authorized runner.
 
 ## Set up/run/test/deploy
 
-- Install Bun. Run `bun curve2/main.ts guide` or `sh scripts/build.sh <install-directory>`, then use the resulting `bin/curve`. Python 3 is required for DARC archive commands. Native code generation uses Clang.
+- Install Bun. Run `bun curve2/main.ts guide` or `sh scripts/build.sh <install-directory>`, then use the resulting `bin/curve`. Python 3 is required for DARC archive commands. Native code generation uses Clang. Install Lean 4.34.0 for the independent CurveTT check with `curve optimization/gate.curve --verdict`.
 - Run `curve optimization/gate.curve --check-only`, `bun test --preload ./curve2/main.ts optimization/optimization.test.ts` and `bun gates/repo.ts` with the pinned tokenizer.
 - Run `curve optimize --help` and follow [the optimization workflow](optimization/README.md). Keep private study inputs and ledgers in the study directories.
 - The source installation is local. Hosted distribution requires its own configured service.
@@ -75,53 +77,13 @@ GitHub rejected issue creation because Issues is disabled. The native evaluator 
 - Reuse archived study contracts and evidence while keeping provisional frame evidence and the synthetic benchmark in separate scopes.
 - Use a source install as the verified packaging path. The local Bun standalone compiler produced a Mach-O that macOS rejected even for a minimal program.
 
-## Deltas` block and a one-line stamp into `HANDOFF.md`, so do not prepend "Previous stamp:" chains or append history to Current state. If the fork left nothing to hand on, call `discard_handoff`. `get_handoff` says what a repository's file lacks against the form. Without those tools, the same commands are `uv run --project ~/Documents/Projects/composite ej handoff check|init|fork|merge|discard` (run from the repository).
+## Deltas
 
 <!-- composite:deltas · newest first; Composite rewrites this block on every merge (ej handoff merge / merge_handoff) -->
+- **2026-11-18 10:36 MST** · codex-mcp-client · `main` at `8bfd0dd`, no commits · `h-ce6e0a` — Merged the verified rebrand PR into tenpointdata/curve main and built the first web platform slice on a local feature branch. Verified typed HTTP routing, HTTPS certificate trust, parser-to-Curve lowering and a real React interaction in Chrome. **Next:** Extend React lowering across modules and add effectful handlers and outbound HTTPS. Follow-ups are tracked in handoff while GitHub Issues is disabled. **Decided:** Use Bun for transport and routing, Curve for checked application logic and view data, and React for browser state and rendering. Keep all publishing in tenpointdata/curve and preserve the primary checkout's concurrent edits.
+- **2026-11-18 10:36 MST** · codex-mcp-client · `main` `9c586f0`→`8bfd0dd` (1 commit) · `h-a1d3b6` — Installed the Curve checkout launcher and Bend compatibility aliases, retired the old standalone compiler to Trash, and verified the shared Composite skill and agent PATH. Installed Lean 4.34.0 and passed the independent CurveTT verdict through both command names. **Next:** The live evaluator adapter and hosted or cluster release checks remain in Triage. **Decided:** Use one checkout-backed launcher across local harnesses and one Composite-managed skill. Keep the standalone Bend files in Trash for rollback and resolve Lean by the compiler’s pinned version.
 - **2026-11-18 10:19 MST** · codex-mcp-client · `main` at `9c586f0`, no commits · `h-02543b` — Rebranded the active Bend 2 checkout as Curve and implemented the whitepaper workflow as curve optimize. Verified legacy/current loading, source installation, native compilation, tool suites, the constraint laws and historical synthetic and provisional frame evidence. **Next:** Connect a native evaluator worker and run independent Lean and release acceptance. GitHub rejected follow-up filings with HTTP 410 because Issues is disabled. **Decided:** Kept upstream papers and benchmark records as provenance. Stored experiment reservations and receipts in SQLite. Kept engineering-study archives in their original folders and did not use provisional frame data to qualify a candidate.
 <!-- /composite:deltas -->
-
-## What this is
-
-## Where things live
-
-The inherited language, runtime and CLI start in the compiler directory. Examples, test programs and upstream papers live under `demos/`, `tests/` and `paper/`. The optimization implementation belongs under `optimization/`.
-
-## Current state
-
-2026-11-18. Cloned `tenpointdata/curve` at `9c586f09`. The initial Curve rebrand and whitepaper implementation are in progress under handoff `h-02543b`.
-
-## Triage
-
-### Agents
-
-The assigned initial rebrand and optimization implementation are in progress.
-
-### Human
-
-None.
-
-### Blocked
-
-None.
-
-## Set up/run/test/deploy
-
-The compiler uses Bun. No deployment target is configured in this checkout.
-
-## Open work
-
-The initial implementation is active under handoff `h-02543b`.
-
-## Known issues and gotchas
-
-Published upstream papers and license notices are provenance records.
-
-## Decisions
-
-Carry upstream commit history. Verify the language's normal entry points and replay the original synthetic truss benchmark, then inspect the provisional frame evidence separately.
-
-## Deltas
 
 ## Updating this document
 
