@@ -1,5 +1,7 @@
 import { join } from "node:path";
 import { CURVE_DIR } from "../curve2/curve.ts";
+// Imported (not run), main.ts registers the .curve loader that gate.curve needs.
+import "../curve2/main.ts";
 import { canonical, nonnegative, type Constraint, type Contract, type GateStatus,
   type Measurement, type Receipt, type Request, type Role } from "./model.ts";
 
