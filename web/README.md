@@ -47,10 +47,48 @@ pairs, headers and a UTF-8 body. `Web.param`, `Web.query_param` and
 name. A response carries an HTTP status, headers and a text body.
 `Web.json` labels an already encoded JSON body.
 
-This first server adapter runs pure Curve handlers. Native networking,
-cryptography, HTTP parsing, body limits and URL matching belong to Bun.
-Streaming bodies, middleware, WebSockets, outbound HTTPS and effectful
-request handlers are separate extensions.
+Bun handles networking, TLS, HTTP parsing, body limits and URL matching.
+Use `handle` for a pure response or `handle_action` for outbound HTTPS.
+Streaming application bodies, middleware and WebSockets are separate extensions.
+
+## Make outbound HTTPS requests
+
+An effectful app exports `handle_action(U32, Web.Request) -> Web.Action`
+in place of `handle`. Return `Web.send(response)` to complete the request.
+Return `Web.get(url, next)` or `Web.https(request, next)` to ask the Bun host
+to fetch a URL and resume the Curve continuation. A general HTTPS request
+carries the method, URL, headers and text body.
+
+```python
+def handle_action(route: U32, request: Web.Request) -> Web.Action:
+  Web.get("https://example.com/", show_result)
+
+def show_result(result: Web.FetchResult) -> Web.Action:
+  match result:
+    case Web.Received{status, headers, body}:
+      Web.send(Web.text(status, body))
+    case Web.FetchFailed{reason}:
+      Web.send(Web.text(502, "Upstream unavailable"))
+```
+
+```sh
+curve web serve demos/web_http/client.curve --allow-origin https://example.com
+curl --get --data-urlencode 'url=https://example.com/' http://127.0.0.1:3000/api/fetch
+```
+
+Repeat `--allow-origin` to permit additional HTTPS origins by scheme, host,
+and port. Origin access is empty by default. Certificate and hostname
+verification use Bun's TLS stack. Use `--ca CA.pem` to set the trust roots
+for an upstream with a private CA. Each inbound request can run up to four
+outbound actions. Each action uses a 15-second timeout and a 1 MiB decoded
+response byte limit by default. Override them with `--fetch-timeout` (ms)
+and `--max-fetch-bytes`. Redirect responses are delivered to the continuation
+with their status and headers. Following one requires a new action that
+passes the same origin check.
+
+Curve continuations receive either the upstream status, headers and decoded
+text, or a typed failure for an invalid request, disallowed origin, timeout,
+cancellation, oversized response, or transport error.
 
 ## Compile a React component
 
@@ -66,19 +104,24 @@ curve demos/web_react/web/index.html -o /tmp/curve-react-public
 curve web serve demos/web_http/server.curve --public /tmp/curve-react-public
 ```
 
-The command parses JSX or TSX and checks the generated Curve module before
-writing it. The module imports the built-in `View` library. For an input
-component named `App`, the generated JavaScript module exports
-`views["Component.App"]`. String props become positional parameters in
-destructuring order.
+The compiler checks the generated Curve module before writing it. Each entry
+component keeps its `Component.*` export, such as `views["Component.App"]`.
+Required destructured props become positional parameters in declaration order.
+A TypeScript `string`, `boolean` or `number` lowers to Curve `String`, `Bool`
+or `U32` respectively. Pass integers in the unsigned 32-bit range for number
+props. Unannotated props retain their string behavior.
 
-The initial subset supports synchronous function and arrow components with a
-single JSX return, local component composition, required destructured string
-props, fragments, intrinsic elements, and literal attributes and children.
-Hooks, effects, runtime imports of components, data-dependent JavaScript
-expressions, prop spreads and event bindings inside lowered JSX produce
-source-located diagnostics. Put browser state and events in the React host and
-pass the resulting string props to the Curve view functions.
+Use relative imports to compose supported local JSX/TSX modules. Named and
+default component imports are supported, including aliases. Supply a
+`.jsx` or `.tsx` extension, or omit it when exactly one matching file
+exists. Imported components are linked into the same checked Curve module.
+Boolean `?:`, `&&` and `!` can select or omit rendered views.
+
+Use synchronous function or arrow components with a single JSX return.
+Hooks, effects, package components, arbitrary JavaScript expressions, prop
+spreads and event bindings inside lowered JSX produce source-located
+diagnostics. Keep interactive state and events in the React host and pass
+their values as props to the Curve view functions.
 
 ```jsx
 import { createElement, Fragment } from "react";

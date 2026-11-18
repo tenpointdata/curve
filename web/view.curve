@@ -9,3 +9,10 @@ type Node is Data:
   ViewText{value: String}
   ViewElement{tag: String, props: List<&2, Prop>, children: List<&2, Node>}
   ViewFragment{children: List<&2, Node>}
+
+def choose(condition: Bool, yes: Unit -> Node, no: Unit -> Node) -> Node:
+  match condition:
+    case True{}:
+      yes(Unit{})
+    case False{}:
+      no(Unit{})
