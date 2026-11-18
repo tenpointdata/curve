@@ -1,6 +1,6 @@
 # Curve handoff
 
-**Last updated:** 2026-11-18 10:36 MST, by codex-mcp-client: Merged the verified rebrand PR into tenpointdata/curve main and built the first web platform slice on a local feature branch. Earlier hand-offs are under Deltas and in `ej handoff log`.
+**Last updated:** 2026-11-18 10:41 MST, by codex-mcp-client: Reconciled the verified Curve host setup and independent proof check with the published rebrand and web platform handoff for review. Earlier hand-offs are under Deltas and in `ej handoff log`.
 
 ## Handoff policy
 
@@ -31,13 +31,15 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 
 ## Current state
 
-2026-11-18. Rebrand PR [#1](https://github.com/tenpointdata/curve/pull/1) merged into `tenpointdata/curve` main at `41be44fb`. The local `curve-web-platform` branch starts at that merge. It adds Bun-backed HTTP and HTTPS serving, typed Curve request handlers, and declarative JSX/TSX lowering to checked Curve views. React drives browser state and renders the generated views. Verified TLS trust over loopback, the source installation, and mounting and updating the React demo in Chrome. The independent CurveTT kernel checked both example modules. All 13 web and optimization tests, 136 linter tests and 9 cache tests passed.
+2026-11-18. Rebrand PR [#1](https://github.com/tenpointdata/curve/pull/1) merged into `tenpointdata/curve` main at `41be44fb`. Web platform PR [#2](https://github.com/tenpointdata/curve/pull/2) merged at `efdad4f0`. It adds Bun-backed HTTP and HTTPS serving, typed Curve request handlers, and declarative JSX/TSX lowering to checked Curve views. React drives browser state and renders the generated views. Verified TLS trust over loopback, the source installation, and mounting and updating the React demo in Chrome. The independent CurveTT kernel checked both example modules. All 13 web and optimization tests, 136 linter tests and 9 cache tests passed.
 
 2026-11-18. Cloned `tenpointdata/curve` at upstream base `9c586f09` and migrated the active CLI, source files, package tooling, documentation and installation to Curve. The Mac's `curve` and compatibility `bend` launchers resolve to the checkout.
 
-The whitepaper workflow runs through `curve optimize`. Verified the repository gate, 136 linter checks, 37 formatter checks, 9 proof-cache checks, 6 optimization checks, the gate's Curve proofs, a native program, mixed legacy/current imports and source installation. TypeScript reported only the same three checker diagnostics reproduced at the upstream base. The independent Lean run and cluster gates are pending.
+The whitepaper workflow runs through `curve optimize`. Verified the repository gate, 136 linter checks, 37 formatter checks, 9 proof-cache checks, 6 optimization checks, the gate's Curve proofs, a native program, mixed legacy/current imports and source installation. TypeScript reported only the same three checker diagnostics reproduced at the upstream base. The optimization gate passed the independent CurveTT verdict on macOS with Lean 4.34.0. Cluster and hosted release checks are pending.
 
 The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.391350647 g among 33 passing designs, and the 47 failed designs received no ranking. Replay was idempotent, and a tampered receipt was rejected before import. Provisional frame summaries are verified against their own receipts and search contract and reported separately. Their qualification remains unestablished.
+
+Composite manages the shared Curve policy and skill. The verified macOS `curve` and `bend` launchers use the Curve checkout. Composite’s local harness environments resolved both commands, and its MCP server returned the shared skill.
 
 ## Triage
 
@@ -46,7 +48,7 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 - Extend the JSX frontend to additional modules and control-flow expressions. Done when representative components lower with accurate semantics and located errors for unsupported constructs.
 - Add standard outbound HTTPS and an effectful request handler contract. Done when verified TLS fetch and asynchronous handler integration work without exposing transport details to pure handlers.
 - Add a live native evaluator adapter. Small integration after the evaluator's retry semantics are pinned. Done when an interrupted bounded run resumes from exact pending request and result identities without duplicate work or unaccounted spend.
-- Run independent verification and release checks. Medium. Done when the pinned Lean kernel verifies the gate and authorized target environments pass their applicable release checks.
+- Run release checks. Medium. Done when authorized target environments pass their applicable release checks.
 
 ### Human
 
@@ -54,11 +56,11 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 
 ### Blocked
 
-- Hosted ping requires a configured Curve registry and release service. Cluster gates require an authorized runner. The independent kernel needs the pinned Lean toolchain.
+- Hosted ping requires a configured Curve registry and release service. Cluster gates require an authorized runner.
 
 ## Set up/run/test/deploy
 
-- Install Bun. Run `bun curve2/main.ts guide` or `sh scripts/build.sh <install-directory>`, then use the resulting `bin/curve`. Python 3 is required for DARC archive commands. Native code generation uses Clang.
+- Install Bun. Run `bun curve2/main.ts guide` or `sh scripts/build.sh <install-directory>`, then use the resulting `bin/curve`. Python 3 is required for DARC archive commands. Native code generation uses Clang. Install Lean 4.34.0 and run `curve optimization/gate.curve --verdict` to reproduce the independent gate check.
 - Run `curve optimization/gate.curve --check-only`, `bun test --preload ./curve2/main.ts optimization/optimization.test.ts` and `bun gates/repo.ts` with the pinned tokenizer.
 - Run `curve web --help` and follow the [web guide](web/README.md). Use `bun test --preload ./curve2/main.ts web/` for the web suite.
 - Run `curve optimize --help` and follow [the optimization workflow](optimization/README.md). Keep private study inputs and ledgers in the study directories.
@@ -86,6 +88,7 @@ GitHub rejected issue creation because Issues is disabled. The web follow-ups, n
 ## Deltas
 
 <!-- composite:deltas · newest first; Composite rewrites this block on every merge (ej handoff merge / merge_handoff) -->
+- **2026-11-18 10:41 MST** · codex-mcp-client · `curve-host-setup-review` at `efdad4f`, no commits · `h-7aa7ef` — Reconciled the verified Curve host setup and independent proof check with the published rebrand and web platform handoff for review. **Next:** Live evaluator integration and hosted or cluster acceptance remain in Triage. **Decided:** Base the documentation follow-up on current main so the existing rebrand and web platform history are preserved.
 - **2026-11-18 10:36 MST** · codex-mcp-client · `main` at `8bfd0dd`, no commits · `h-ce6e0a` — Merged the verified rebrand PR into tenpointdata/curve main and built the first web platform slice on a local feature branch. Verified typed HTTP routing, HTTPS certificate trust, parser-to-Curve lowering and a real React interaction in Chrome. **Next:** Extend React lowering across modules and add effectful handlers and outbound HTTPS. Follow-ups are tracked in handoff while GitHub Issues is disabled. **Decided:** Use Bun for transport and routing, Curve for checked application logic and view data, and React for browser state and rendering. Keep all publishing in tenpointdata/curve and preserve the primary checkout's concurrent edits.
 - **2026-11-18 10:36 MST** · codex-mcp-client · `main` `9c586f0`→`8bfd0dd` (1 commit) · `h-a1d3b6` — Installed the Curve checkout launcher and Bend compatibility aliases, retired the old standalone compiler to Trash, and verified the shared Composite skill and agent PATH. Installed Lean 4.34.0 and passed the independent CurveTT verdict through both command names. **Next:** The live evaluator adapter and hosted or cluster release checks remain in Triage. **Decided:** Use one checkout-backed launcher across local harnesses and one Composite-managed skill. Keep the standalone Bend files in Trash for rollback and resolve Lean by the compiler’s pinned version.
 - **2026-11-18 10:19 MST** · codex-mcp-client · `main` at `9c586f0`, no commits · `h-02543b` — Rebranded the active Bend 2 checkout as Curve and implemented the whitepaper workflow as curve optimize. Verified legacy/current loading, source installation, native compilation, tool suites, the constraint laws and historical synthetic and provisional frame evidence. **Next:** Connect a native evaluator worker and run independent Lean and release acceptance. GitHub rejected follow-up filings with HTTP 410 because Issues is disabled. **Decided:** Kept upstream papers and benchmark records as provenance. Stored experiment reservations and receipts in SQLite. Kept engineering-study archives in their original folders and did not use provisional frame data to qualify a candidate.
