@@ -1,4 +1,5 @@
-import { createHandler, type Handle } from "./actions.ts";
+import { createHandler } from "./actions.ts";
+import { createStreamingHandler, type Dispatch } from "./streams.ts";
 import { type OutboundOptions } from "./https.ts";
 import { serveAssets } from "./assets.ts";
 import { methodName, packFields, record, toResponse, unpackList } from "./wire.ts";
@@ -38,7 +39,7 @@ function readRoute(value: unknown): Route {
   return { method: methodName(route.method), pattern: route.pattern, handler: route.handler };
 }
 
-function appRoutes(value: unknown, handle: Handle) {
+function appRoutes(value: unknown, dispatch: Dispatch) {
   const groups = new Map<string, Map<string, number>>();
   const shapes = new Map<string, string>();
   for (const { method, pattern, handler } of unpackList(value, readRoute)) {
@@ -60,28 +61,34 @@ function appRoutes(value: unknown, handle: Handle) {
       return new Response("Method Not Allowed", { status: 405, headers: { Allow: [...allow].join(", ") } });
     }
     const url = new URL(request.url);
-    const result = await handle(handler, {
-      $: "Request", method, path: url.pathname,
+    return dispatch(handler, {
+      $: "RequestHead", method, path: url.pathname,
       params: packFields(Object.entries(request.params)),
       query: packFields(url.searchParams),
       headers: packFields(request.headers),
-      body: await request.text(),
-    }, request.signal);
-    return toResponse(result, method);
+    }, request);
   }]));
+}
+
+function textDispatch(app: Readonly<Record<string, unknown>>, outbound?: OutboundOptions): Dispatch {
+  const handle = createHandler(app, outbound);
+  return async (id, head, request) => toResponse(
+    await handle(id, { ...head, $: "Request", body: await request.text() }, request.signal), head.method,
+  );
 }
 
 export function startServer(module: unknown, options: ServerOptions = {}) {
   const app = record(module, "Curve web module");
   if (typeof app.routes !== "function") throw new Error("Export routes() -> List<&2, Web.Route>");
-  const handle = createHandler(app, options.outbound);
-  const routes = appRoutes(app.routes(), handle);
+  const maxBodyBytes = options.maxBodyBytes ?? 1024 * 1024;
+  const dispatch = app.handle_stream === undefined ? textDispatch(app, options.outbound) : createStreamingHandler(app, maxBodyBytes);
+  const routes = appRoutes(app.routes(), dispatch);
   const fetch = serveAssets(options.publicDirectory);
   const tls = options.tls ? { cert: Bun.file(options.tls.cert), key: Bun.file(options.tls.key) } : undefined;
   return Bun.serve({
     hostname: options.hostname ?? "127.0.0.1",
     port: options.port ?? 3000,
-    maxRequestBodySize: options.maxBodyBytes ?? 1024 * 1024,
+    maxRequestBodySize: maxBodyBytes,
     ...(tls ? { tls } : {}),
     routes,
     fetch,

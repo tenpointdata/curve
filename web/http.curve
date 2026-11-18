@@ -101,3 +101,57 @@ def resume(action: Action, result: FetchResult) -> Action:
       Send{response}
     case FetchHttps{_, next}:
       next(result)
+
+type RequestHead is Data:
+  RequestHead{method: String, path: String, params: List<&2, Field>, query: List<&2, Field>, headers: List<&2, Field>}
+
+type BodyInput is Data:
+  BodyChunk{bytes: List<&2, U32>}
+  BodyEnd{}
+  BodyTooLarge{}
+  BodyFailed{}
+
+type BodyOutput is Type:
+  BodyStop{}
+  BodyAbort{}
+  BodyWrite{bytes: List<&2, U32>, next: Unit -> BodyOutput}
+  BodyRead{next: BodyInput -> BodyOutput}
+
+type StreamAction is Type:
+  StreamRead{next: BodyInput -> StreamAction}
+  StreamReply{status: U32, headers: List<&2, Field>, body: BodyOutput}
+
+def read_stream(next: BodyInput -> StreamAction) -> StreamAction:
+  StreamRead{next}
+
+def stream_reply(status: U32, headers: List<&2, Field>, body: BodyOutput) -> StreamAction:
+  StreamReply{status, headers, body}
+
+def stream_resume(action: StreamAction, input: BodyInput) -> StreamAction:
+  match action:
+    case StreamRead{next}:
+      next(input)
+    case StreamReply{status, headers, body}:
+      StreamReply{status, headers, body}
+
+def advance_body(body: BodyOutput) -> BodyOutput:
+  match body:
+    case BodyWrite{_, next}:
+      next(Unit{})
+    case BodyRead{next}:
+      BodyRead{next}
+    case BodyStop{}:
+      BodyStop{}
+    case BodyAbort{}:
+      BodyAbort{}
+
+def resume_body(body: BodyOutput, input: BodyInput) -> BodyOutput:
+  match body:
+    case BodyRead{next}:
+      next(input)
+    case BodyWrite{bytes, next}:
+      BodyWrite{bytes, next}
+    case BodyStop{}:
+      BodyStop{}
+    case BodyAbort{}:
+      BodyAbort{}

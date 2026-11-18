@@ -145,7 +145,7 @@ test("reports a located error for input outside the supported subset", () => {
     ['const App = () => <App/>;', "cannot call itself recursively"],
     ['const Card = ({title}: {title: string}) => <h1>{title}</h1>; const App = () => <Card/>;', "Missing prop title"],
     ['const Card = ({title}: {title: object}) => <h1>{title}</h1>;', "Only required string, boolean and U32 number prop types"],
-    ['const App = () => <p>{list.map(item => <b>{item}</b>)}</p>;', "Expected a literal or a bound scalar prop"],
+    ['const App = () => <p>{list.map(item => <b>{item}</b>)}</p>;', "Map a typed list prop"],
     ['const App = ({label}) => label && <div/>;', "A JSX condition requires a boolean"],
     ['const App = () => <input size={4294967296}/>;', "Expected a literal or a bound scalar prop"],
     ['const Card = ({count}: {count: number}) => <p>{count}</p>; const App = () => <Card count="wrong"/>;', "Prop count on Card requires U32"],
