@@ -108,7 +108,7 @@ test("a law whose fill is dropped is a TODO", () => {
     ["PROOF.curve", "def Laws.k_is():\n  {==}\n", ""],
     ["PROOF.curve", "  5n\n", "  6n\n"],
   ]);
-});
+}, 20_000); // runs the full checker several times; takes ~6.5 s, over Bun's 5 s default
 
 // the verdict reads what a checked body names: a skipped def keeps it
 test("a skipped def that calls Base's @unsafe Array.fork still fails", () => {
