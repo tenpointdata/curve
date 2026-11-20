@@ -48,8 +48,8 @@ name. A response carries an HTTP status, headers and a text body.
 `Web.json` labels an already encoded JSON body.
 
 Bun handles networking, TLS, HTTP parsing, body limits and URL matching.
-Use `handle` for a pure response or `handle_action` for outbound HTTPS.
-Streaming application bodies, middleware and WebSockets are separate extensions.
+Use `handle` for a pure response, `handle_action` for outbound HTTPS, or
+`handle_stream` for binary request and response bodies.
 
 ## Make outbound HTTPS requests
 
@@ -89,6 +89,45 @@ passes the same origin check.
 Curve continuations receive either the upstream status, headers and decoded
 text, or a typed failure for an invalid request, disallowed origin, timeout,
 cancellation, oversized response, or transport error.
+
+## Stream binary request and response bodies
+
+A streaming application exports `handle_stream(U32, Web.RequestHead) ->
+Web.StreamAction`. The request head carries the method, path, parameters,
+query and headers. Export one kind of handler per application.
+
+- `Web.read_stream(next)` reads a chunk before selecting the response status
+  and headers. `next` receives a `Web.BodyChunk`, `Web.BodyEnd`,
+  `Web.BodyTooLarge` or `Web.BodyFailed`.
+- `Web.stream_reply(status, headers, body)` starts a response.
+  A `Web.BodyWrite{bytes, next}` writes a binary chunk. The host calls
+  `next` on the next pull. `Web.BodyRead{next}` can read more input as part
+  of the response stream. `Web.BodyStop{}` completes it and
+  `Web.BodyAbort{}` reports a failed transfer.
+
+Byte lists use `U32` values from 0 to 255. The host delivers chunks of at most
+16 KiB and expects each write to contain 1 to 16,384 bytes. Choose response
+headers before writing. A failure after headers have been sent can end the
+stream, so clients should handle incomplete transfers. The request body
+limit still comes from `--max-body`. Bun may return HTTP 413 at the
+transport layer before the application sees an oversized body. A handler
+that is already reading receives `Web.BodyTooLarge` when the request
+cursor detects the overflow. Disconnects cancel further input and output
+work.
+
+```sh
+curve web serve demos/web_http/stream.curve
+curl -sS --data-binary @input.bin http://127.0.0.1:3000/binary/echo -o output.bin
+cmp input.bin output.bin
+```
+
+The echo demo uses 1,048,577 chunks of proof fuel to bound its recursion.
+That covers the default 1 MiB body limit even with one byte per chunk.
+
+Bun 1.4.0 was verified to deliver a response chunk while the upload was
+still open. The Bun 1.3.12 test handled complete binary transfers but
+buffered the small upload used in the duplex probe. Outbound HTTPS actions
+still deliver bounded text bodies.
 
 ## Compile a React component
 
@@ -138,6 +177,43 @@ createRoot(document.getElementById("root"))
 adapter lives in [react.ts](react.ts). The demo uses a React click handler to
 change a string prop and render the generated view again.
 
+## Render keyed lists
+
+List props use `string[]`, `number[]`, or arrays of records with required
+string, Boolean, or U32 fields. Readonly array forms work too. A `.map()`
+callback takes one item and returns one JSX element with an explicit key.
+For scalar lists the key is the item. For records it is a string or U32
+field on the item. Keys must be distinct among siblings.
+
+```tsx
+type Item = { id: string; label: string };
+
+export const Items = ({ items }: { items: Item[] }) => (
+  <ul>{items.map(item => <li key={item.id}>{item.label}</li>)}</ul>
+);
+```
+
+Pass ordinary JavaScript values through `viewWithProps`. The generated
+module supplies the layout that validates the props and encodes the Curve
+lists.
+
+```jsx
+import { createElement, Fragment } from "react";
+import { createRoot } from "react-dom/client";
+import views from "./Generated.curve";
+import { renderReact, viewWithProps } from "./react.ts";
+
+const root = createRoot(document.getElementById("root"));
+const view = viewWithProps(views, "Component.Items", {
+  items: [{ id: "curve", label: "Curve" }, { id: "react", label: "React" }],
+});
+root.render(renderReact(view, createElement, Fragment));
+```
+
+The renderer uses a keyed React fragment per item. Reordering the input
+preserves the corresponding DOM nodes. Try the **Reverse items** button in
+the demo.
+
 ## Verify
 
 ```sh
@@ -145,5 +221,6 @@ bun test --preload ./curve2/main.ts web/
 bun curve2/main.ts demos/web_http/server.curve --check-only
 ```
 
-HTTPS tests use OpenSSL to generate a temporary certificate and verify both
-untrusted and trusted client connections over loopback.
+HTTPS tests use OpenSSL to verify trusted and untrusted TLS connections over
+loopback. The streaming suite runs duplex and disconnect tests on Bun 1.4
+or later.

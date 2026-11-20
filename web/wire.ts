@@ -8,13 +8,17 @@ type Value = Readonly<Record<string, unknown>>;
 export type CurveList<T> = { $: "Nil" } | { $: "Con"; head: T; tail: CurveList<T> };
 export type Field = { $: "Field"; key: string; value: string };
 
-export interface CurveRequest {
-  readonly $: "Request";
+export interface CurveRequestHead {
+  readonly $: "RequestHead";
   readonly method: string;
   readonly path: string;
   readonly params: CurveList<Field>;
   readonly query: CurveList<Field>;
   readonly headers: CurveList<Field>;
+}
+
+export interface CurveRequest extends Omit<CurveRequestHead, "$"> {
+  readonly $: "Request";
   readonly body: string;
 }
 
@@ -62,14 +66,22 @@ export function unpackFields(value: unknown): [string, string][] {
   return unpackList(value, fieldEntry);
 }
 
+export function responseInit(result: Value, invalidStatus: string): { status: number; headers: [string, string][] } {
+  const { status } = result;
+  if (typeof status !== "number" || !Number.isInteger(status) || status < 200 || status > 599) {
+    throw new Error(invalidStatus);
+  }
+  return { status, headers: unpackFields(result.headers) };
+}
+
+export function responseHasBody(method: string, status: number): boolean {
+  return method !== "HEAD" && status !== 204 && status !== 205 && status !== 304;
+}
+
 export function toResponse(value: unknown, method: string): Response {
   const result = record(value, "Web.Response");
-  const { status, body } = result;
-  if (result.$ !== "Response" || typeof status !== "number" ||
-      !Number.isInteger(status) || status < 200 || status > 599 || typeof body !== "string") {
-    throw new Error("Expected Web.Response with a final HTTP status and text body");
-  }
-  const headers = unpackFields(result.headers);
-  const noBody = method === "HEAD" || status === 204 || status === 205 || status === 304;
-  return new Response(noBody ? null : body, { status, headers });
+  const invalidResponse = "Expected Web.Response with a final HTTP status and text body";
+  if (result.$ !== "Response" || typeof result.body !== "string") throw new Error(invalidResponse);
+  const init = responseInit(result, invalidResponse);
+  return new Response(responseHasBody(method, init.status) ? result.body : null, init);
 }

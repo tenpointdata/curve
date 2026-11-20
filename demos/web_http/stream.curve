@@ -1,0 +1,45 @@
+import Base
+import Web
+
+def routes() -> List<&2, Web.Route>:
+  [
+    Web.route(Web.Post{}, "/binary/echo", 0),
+    Web.route(Web.Post{}, "/binary/first", 1),
+    Web.route(Web.Get{}, "/binary/example", 2)
+  ]
+
+def binary_headers() -> List<&2, Web.Field>:
+  [Web.field("content-type", "application/octet-stream")]
+
+# The fuel proves the demo terminates even if the server permits larger bodies.
+def echo(remaining: Nat, input: Web.BodyInput) -> Web.BodyOutput:
+  match remaining input:
+    case 1n+rest Web.BodyChunk{bytes}:
+      Web.BodyWrite{bytes, ignored => Web.BodyRead{next => echo(rest, next)}}
+    case _ Web.BodyEnd{}:
+      Web.BodyStop{}
+    case _ _:
+      Web.BodyAbort{}
+
+def first(input: Web.BodyInput) -> Web.StreamAction:
+  match input:
+    case Web.BodyChunk{bytes}:
+      Web.stream_reply(200, binary_headers(), Web.BodyWrite{bytes, ignored => Web.BodyStop{}})
+    case Web.BodyEnd{}:
+      Web.stream_reply(204, [], Web.BodyStop{})
+    case Web.BodyTooLarge{}:
+      Web.stream_reply(413, [], Web.BodyStop{})
+    case Web.BodyFailed{}:
+      Web.stream_reply(400, [], Web.BodyStop{})
+
+def example() -> Web.BodyOutput:
+  Web.BodyWrite{[0, 255], ignored => Web.BodyWrite{[13, 10], last => Web.BodyStop{}}}
+
+def handle_stream(route: U32, head: Web.RequestHead) -> Web.StreamAction:
+  match route:
+    case 0:
+      Web.stream_reply(200, binary_headers(), Web.BodyRead{chunk => echo(1048577n, chunk)})
+    case 1:
+      Web.read_stream(first)
+    case _:
+      Web.stream_reply(200, binary_headers(), example())

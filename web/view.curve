@@ -9,6 +9,8 @@ type Node is Data:
   ViewText{value: String}
   ViewElement{tag: String, props: List<&2, Prop>, children: List<&2, Node>}
   ViewFragment{children: List<&2, Node>}
+  ViewList{children: List<&2, Node>}
+  ViewKeyed{key: String, child: Node}
 
 def choose(condition: Bool, yes: Unit -> Node, no: Unit -> Node) -> Node:
   match condition:
@@ -16,3 +18,14 @@ def choose(condition: Bool, yes: Unit -> Node, no: Unit -> Node) -> Node:
       yes(Unit{})
     case False{}:
       no(Unit{})
+
+def map.loop(~A: Data, ~f: A -> Node, xs: List<&2, A>, acc: List<&2, Node>) -> List<&2, Node>:
+  match xs:
+    case Nil{}:
+      List.reverse(&2, Node, acc)
+    case head <> tail:
+      +item = head
+      map.loop(~A, ~f, tail, f(item) <> acc)
+
+def map(~A: Data, ~f: A -> Node, xs: List<&2, A>) -> List<&2, Node>:
+  map.loop(~A, ~f, xs, Nil{})

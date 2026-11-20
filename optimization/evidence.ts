@@ -1,5 +1,6 @@
-import { join } from "node:path";
-import { CURVE_DIR } from "../curve2/curve.ts";
+import { realpathSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { canonical, nonnegative, type Constraint, type Contract, type GateStatus,
   type Measurement, type Receipt, type Request, type Role } from "./model.ts";
 
@@ -12,9 +13,12 @@ interface GateModule {
   rankable(gate: NativeGate, objectivesComplete: boolean): boolean;
 }
 
-const { default: { verdict, rankable } } = await import(
-  join(CURVE_DIR, "..", "optimization", "gate.curve")
-) as { default: GateModule };
+// Match Curve's source and standalone install layouts without loading the
+// compiler before curve-lint can patch it.
+const gateUrl = import.meta.url.startsWith("file:///$bunfs/")
+  ? pathToFileURL(join(dirname(realpathSync(process.execPath)), "..", "optimization", "gate.curve"))
+  : new URL("./gate.curve", import.meta.url);
+const { default: { verdict, rankable } } = await import(gateUrl.href) as { default: GateModule };
 
 export interface Outcome {
   readonly id: string;

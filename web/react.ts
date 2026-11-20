@@ -1,4 +1,5 @@
 import { record, unpackList } from "./wire.ts";
+export { viewWithProps } from "./view_props.ts";
 
 export type ReactFactory<Node, Fragment> = (
   tag: string | Fragment,
@@ -40,6 +41,19 @@ export function renderReact<Node, Fragment>(
     const node = record(value, "Curve View constructor");
     if (node.$ === "ViewText" && typeof node.value === "string") return node.value;
     if (node.$ === "ViewFragment") return createElement(fragment, null, ...unpackList(node.children, render));
+    if (node.$ === "ViewList") {
+      const keys = new Set<string>();
+      const children = unpackList(node.children, entry => {
+        const item = record(entry, "a keyed Curve View list item");
+        if (item.$ !== "ViewKeyed" || typeof item.key !== "string") {
+          throw new TypeError("A Curve View list item requires a key");
+        }
+        if (keys.has(item.key)) throw new TypeError("Duplicate Curve View list key " + item.key);
+        keys.add(item.key);
+        return createElement(fragment, { key: item.key }, render(item.child));
+      });
+      return createElement(fragment, null, ...children);
+    }
     if (node.$ === "ViewElement" && typeof node.tag === "string" && isViewTag(node.tag)) {
       return createElement(node.tag, Object.fromEntries(unpackList(node.props, attribute)), ...unpackList(node.children, render));
     }
