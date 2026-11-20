@@ -92,7 +92,7 @@ export function createStreamingHandler(app: Readonly<Record<string, unknown>>, m
         action = record(resume(action, chunk), "Web.StreamAction");
       }
       if (action.$ !== "StreamReply") throw new Error("Expected Web.StreamReply");
-      const init = responseInit(action);
+      const init = responseInit(action, "Expected Web.StreamReply with a final HTTP status");
       if (!responseHasBody(head.method, init.status)) {
         void closeInput();
         return new Response(null, init);

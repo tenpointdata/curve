@@ -109,14 +109,20 @@ Byte lists use `U32` values from 0 to 255. The host delivers chunks of at most
 16 KiB and expects each write to contain 1 to 16,384 bytes. Choose response
 headers before writing. A failure after headers have been sent can end the
 stream, so clients should handle incomplete transfers. The request body
-limit still comes from `--max-body`. Disconnects cancel further input and
-output work.
+limit still comes from `--max-body`. Bun may return HTTP 413 at the
+transport layer before the application sees an oversized body. A handler
+that is already reading receives `Web.BodyTooLarge` when the request
+cursor detects the overflow. Disconnects cancel further input and output
+work.
 
 ```sh
 curve web serve demos/web_http/stream.curve
 curl -sS --data-binary @input.bin http://127.0.0.1:3000/binary/echo -o output.bin
 cmp input.bin output.bin
 ```
+
+The echo demo uses 1,048,577 chunks of proof fuel to bound its recursion.
+That covers the default 1 MiB body limit even with one byte per chunk.
 
 Bun 1.4.0 was verified to deliver a response chunk while the upload was
 still open. The Bun 1.3.12 test handled complete binary transfers but
@@ -192,8 +198,12 @@ module supplies the layout that validates the props and encodes the Curve
 lists.
 
 ```jsx
+import { createElement, Fragment } from "react";
+import { createRoot } from "react-dom/client";
+import views from "./Generated.curve";
 import { renderReact, viewWithProps } from "./react.ts";
 
+const root = createRoot(document.getElementById("root"));
 const view = viewWithProps(views, "Component.Items", {
   items: [{ id: "curve", label: "Curve" }, { id: "react", label: "React" }],
 });

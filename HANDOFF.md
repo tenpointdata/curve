@@ -43,6 +43,8 @@ The whitepaper workflow runs through `curve optimize`. Verified the repository g
 
 Composite manages the shared Curve policy and skill. The Mac's `curve` and `bend` launchers use the primary checkout, and the local harness environments resolve both names. Composite local-release build `a0fdf5e46ddd47e9` passed 151 tests and deployed as `d8b5cc3c21f54885` from `e648eb94` before this integration. That checkout and the packaged release need the newer source to expose the web features.
 
+The earlier 20-second cache test timeout was insufficient on a busy build host. The cache suite uses a two-minute per-case limit and passed all nine cases there.
+
 The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.391350647 g among 33 passing designs, and the 47 failed designs received no ranking. Replay was idempotent, and a tampered receipt was rejected before import. Provisional frame summaries are verified against their own receipts and search contract and reported separately. Their qualification remains unestablished.
 
 ## Triage

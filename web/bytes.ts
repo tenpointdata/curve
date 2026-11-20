@@ -37,11 +37,15 @@ export class RequestBytes {
   private offset = 0;
   private total = 0;
   private finished = false;
+  private cancelled = false;
 
   constructor(private readonly source: ReadableStream<Uint8Array> | null, private readonly limit: number) {}
 
   async read(): Promise<BodyInput> {
-    if (this.finished) throw new Error("HTTP request body has already ended");
+    if (this.finished) {
+      if (this.cancelled) return this.fail();
+      throw new Error("HTTP request body has already ended");
+    }
     if (this.source === null) {
       this.finish();
       return { $: "BodyEnd" };
@@ -52,10 +56,9 @@ export class RequestBytes {
       try {
         next = await reader.read();
       } catch {
-        if (!this.finished) this.finish();
-        return { $: "BodyFailed" };
+        return this.fail();
       }
-      if (this.finished) return { $: "BodyFailed" };
+      if (this.finished) return this.fail();
       if (next.done) {
         this.finish();
         return { $: "BodyEnd" };
@@ -63,6 +66,7 @@ export class RequestBytes {
       this.total += next.value.byteLength;
       if (this.total > this.limit) {
         await this.cancel();
+        this.cancelled = false;
         return { $: "BodyTooLarge" };
       }
       if (next.value.byteLength > 0) {
@@ -80,6 +84,7 @@ export class RequestBytes {
   async cancel(): Promise<void> {
     if (this.finished) return;
     this.finished = true;
+    this.cancelled = true;
     this.pending = undefined;
     const reader = this.reader;
     this.reader = undefined;
@@ -94,8 +99,14 @@ export class RequestBytes {
 
   private finish(): void {
     this.finished = true;
+    this.cancelled = false;
     this.pending = undefined;
     this.reader?.releaseLock();
     this.reader = undefined;
+  }
+
+  private fail(): BodyInput {
+    this.finish();
+    return { $: "BodyFailed" };
   }
 }

@@ -66,10 +66,10 @@ export function unpackFields(value: unknown): [string, string][] {
   return unpackList(value, fieldEntry);
 }
 
-export function responseInit(result: Value): { status: number; headers: [string, string][] } {
+export function responseInit(result: Value, invalidStatus: string): { status: number; headers: [string, string][] } {
   const { status } = result;
   if (typeof status !== "number" || !Number.isInteger(status) || status < 200 || status > 599) {
-    throw new Error("Expected a final HTTP status");
+    throw new Error(invalidStatus);
   }
   return { status, headers: unpackFields(result.headers) };
 }
@@ -80,9 +80,8 @@ export function responseHasBody(method: string, status: number): boolean {
 
 export function toResponse(value: unknown, method: string): Response {
   const result = record(value, "Web.Response");
-  if (result.$ !== "Response" || typeof result.body !== "string") {
-    throw new Error("Expected Web.Response with a final HTTP status and text body");
-  }
-  const init = responseInit(result);
+  const invalidResponse = "Expected Web.Response with a final HTTP status and text body";
+  if (result.$ !== "Response" || typeof result.body !== "string") throw new Error(invalidResponse);
+  const init = responseInit(result, invalidResponse);
   return new Response(responseHasBody(method, init.status) ? result.body : null, init);
 }

@@ -49,6 +49,7 @@ test.skipIf(!verifiedDuplexRuntime)("client receives binary output before ending
     const tail = Buffer.from([2, 0, 3]);
     const output = await new Promise<Buffer>((done, fail) => {
       const pieces: Buffer[] = [];
+      let received = 0;
       timer = setTimeout(() => fail(new Error("no HTTP streaming progress before upload finished")), 3000);
       connection.on("error", fail);
       connection.on("response", response => {
@@ -56,10 +57,10 @@ test.skipIf(!verifiedDuplexRuntime)("client receives binary output before ending
         response.on("error", fail);
         response.on("data", (chunk: Buffer) => {
           pieces.push(chunk);
-          if (!connection.writableEnded) {
-            expect(Buffer.concat(pieces)).toEqual(payload);
-            connection.end(tail);
-          }
+          received += chunk.length;
+          if (connection.writableEnded || received < payload.length) return;
+          if (!Buffer.concat(pieces).equals(payload)) return fail(new Error("unexpected bytes before upload finished"));
+          connection.end(tail);
         });
         response.on("end", () => done(Buffer.concat(pieces)));
       });
@@ -115,6 +116,13 @@ test("the request cursor enforces its byte limit and releases native readers", a
   expect(await input.read()).toEqual({ $: "BodyTooLarge" });
   expect(cancelled).toBe(true);
   expect(source.locked).toBe(false);
+});
+
+test("cancelling before a read delivers one typed failure", async () => {
+  const input = new RequestBytes(new ReadableStream<Uint8Array>(), 8);
+  await input.cancel();
+  expect(await input.read()).toEqual({ $: "BodyFailed" });
+  await expect(input.read()).rejects.toThrow("already ended");
 });
 
 test("response continuations run on pull and cancellation releases the request", async () => {

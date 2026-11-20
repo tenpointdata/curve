@@ -11,6 +11,7 @@ def routes() -> List<&2, Web.Route>:
 def binary_headers() -> List<&2, Web.Field>:
   [Web.field("content-type", "application/octet-stream")]
 
+# The fuel proves the demo terminates even if the server permits larger bodies.
 def echo(remaining: Nat, input: Web.BodyInput) -> Web.BodyOutput:
   match remaining input:
     case 1n+rest Web.BodyChunk{bytes}:
