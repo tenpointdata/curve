@@ -36,6 +36,8 @@ The whitepaper workflow runs through `curve optimize`. Verified the repository g
 
 The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.391350647 g among 33 passing designs, and the 47 failed designs received no ranking. Replay was idempotent, and a tampered receipt was rejected before import. Provisional frame summaries are verified against their own receipts and search contract and reported separately. Their qualification remains unestablished.
 
+The local-release delivery of `e648eb94` now passes: its `bun` test suite runs in three steps (optimization with its preload, curve-lint, curve-cache), 151 of 151 tests passed, and build `77453dfec2fe4c45` (20261120.152353) is deployed and verified. The failed build `9635d4761b874240` had two causes: the suite ran as one `bun test` process, where curve-lint and the optimizer conflict, and one cache test took 6.5 s against Bun's 5 s default.
+
 Composite owns the shared Curve policy and skill. The Mac's `~/.local/bin/curve` launcher uses the local checkout and both `bend` paths forward to it. The retired standalone installation is recoverable from Trash. The installed Composite MCP server can return the skill, and the local harness launch environments resolve both commands. No remote workers are configured.
 
 ## Triage
@@ -56,7 +58,7 @@ Composite owns the shared Curve policy and skill. The Mac's `~/.local/bin/curve`
 ## Set up/run/test/deploy
 
 - Install Bun. Run `bun curve2/main.ts guide` or `sh scripts/build.sh <install-directory>`, then use the resulting `bin/curve`. Python 3 is required for DARC archive commands. Native code generation uses Clang. Install Lean 4.34.0 for the independent CurveTT check with `curve optimization/gate.curve --verdict`.
-- Run `curve optimization/gate.curve --check-only`, `bun test --preload ./curve2/main.ts optimization/optimization.test.ts` and `bun gates/repo.ts` with the pinned tokenizer.
+- Run `curve optimization/gate.curve --check-only`, `bun test --preload ./curve2/main.ts optimization/optimization.test.ts`, `bun test tools/curve-lint`, `bun test tools/curve-cache/src/cache.test.ts` and `bun gates/repo.ts` with the pinned tokenizer. The local-release pipeline runs those three bun commands as one suite.
 - Run `curve optimize --help` and follow [the optimization workflow](optimization/README.md). Keep private study inputs and ledgers in the study directories.
 - The source installation is local. Hosted distribution requires its own configured service.
 
@@ -69,6 +71,8 @@ GitHub rejected issue creation because Issues is disabled. The native evaluator 
 - Curve uses `.curve` for new sources and accepts legacy `.bend` imports. Keep paired LAWS and PROOF extensions aligned.
 - The optimizer relies on trusted domain evaluators and the declared fidelity for its decisions. A passing provisional simulation has a separate scope from physical qualification.
 - The source installer requires Bun and ignores working-directory Bun configuration and dotenv files. This checkout also retains pre-existing compiler and tooling files above 600 lines. New optimization modules are below that cap.
+- Do not run the optimizer and curve-lint tests in one `bun test` process. curve-lint must patch curve2 before anything loads it, and `--preload ./curve2/main.ts` loads it first, so each group needs its own run.
+- The cache test "a law whose fill is dropped is a TODO" has a 20 s timeout because it takes about 6.5 s. Other cache tests take up to 7 s on a busy Mac and can time out under load; rerun before treating a timeout as a regression.
 
 ## Decisions
 
