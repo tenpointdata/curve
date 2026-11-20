@@ -1,7 +1,7 @@
 // Each case: a book on disk, run through curve-cache (warm, after a change)
 // and through `curve --check-only`; the outputs must be equal byte for byte.
 
-import { afterAll, expect, test } from "bun:test";
+import { afterAll, expect, setDefaultTimeout, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -13,6 +13,9 @@ const TOOL = path.join(HERE, "cache.ts");
 const CURVE2 = path.join(HERE, "..", "..", "..", "curve2");
 const MAIN = path.join(CURVE2, "main.ts");
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "curve-cache-"));
+
+// These integration cases run the compiler repeatedly, including on shared runners.
+setDefaultTimeout(120_000);
 
 afterAll(() => fs.rmSync(TMP, { recursive: true, force: true }));
 
