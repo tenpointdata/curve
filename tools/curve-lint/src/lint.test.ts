@@ -1378,23 +1378,17 @@ describe("lint", () => {
   });
 
   test("a rule may await I/O, and later rules see earlier findings", async () => {
-    const server = Bun.serve({
-      port: 0,
-      fetch: async (req) => new Response("advice for " + (await req.json()).type),
-    });
+    // File I/O, not a localhost server: sandboxes and proxy settings break loopback HTTP.
+    fixture("advice_N.txt", "advice for N");
     const remote: LintRule = {
       id: "test/api",
       facts: true,
-      run: async (cx, signal) => {
+      run: async (cx) => {
         const fact = loose(cx, cx.fact(cx.body("id")!)!);
         const type = cx.unstable.Curve.term_wnf(fact.bok, fact.ty) as { A: typeof fact.ty };
         const arg = cx.unstable.Curve.term_wnf(fact.bok, type.A) as { k?: string };
-        const res = await fetch(server.url, {
-          method: "POST",
-          body: JSON.stringify({ type: arg.k }),
-          signal,
-        });
-        return [cx.diag({ message: await res.text(), severity: "hint" })];
+        const advice = await Bun.file(path.join(DIR, "advice_" + arg.k + ".txt")).text();
+        return [cx.diag({ message: advice, severity: "hint" })];
       },
     };
     const next: LintRule = {
@@ -1404,7 +1398,7 @@ describe("lint", () => {
         return [];
       },
     };
-    const res = await lint(userland, [remote, next]).finally(() => server.stop(true));
+    const res = await lint(userland, [remote, next]);
     expect(res.ok).toBe(true);
   });
 });
