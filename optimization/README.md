@@ -111,4 +111,44 @@ experiments. Keep those outputs and the ledger outside this repository.
 ```sh
 curve optimization/gate.curve --check-only
 bun test --preload ./curve2/main.ts optimization/optimization.test.ts
+bun test optimization/proof_receipt.test.ts
 ```
+
+## Verification and build receipts
+
+`--receipt <r.json>` records what one run checked and the exact bytes it
+wrote, as a `curve.receipt/1` JSON document ([types](proof_receipt.ts)). It
+combines with `--check-only`, `--verdict` and `-o`; `--verdict -o <out>` builds
+only after the kernel passes. `--export <name>` (repeatable) selects module
+exports that a `.mjs` output must carry. Without `--receipt` the CLI prints and
+exits as before.
+
+```sh
+curve PROOF.curve --verdict -o laws.mjs --export rank --receipt laws.receipt.json
+curve receipt verify laws.receipt.json
+curve receipt junit laws.receipt.json -o "$COMPOSITE_TEST_REPORT_DIR/curve.xml"
+```
+
+A receipt holds the toolchain identity (Curve version, runtime, a digest of the
+compiler, Base, kernel and effect sources, the Lean version and kernel digest),
+the entry and imported sources with SHA-256s, the mode, selected exports, each
+engine's outcome, the overall result, one result per law and each artifact's
+SHA-256, size, kind and module exports. It holds no timestamps, and paths are
+relative to the receipt, so the same inputs give the same bytes.
+
+| Result | Meaning | JUnit |
+| --- | --- | --- |
+| `verified` | the CurveTT kernel independently checked it | pass |
+| `checker_only` | curve2's checker accepted it; no independent check ran or completed | skipped |
+| `rejected` | the checker, the trust scan or the kernel refused it, or a selected export is missing | failure |
+| `skipped` | not evaluated: a law the checker did not reach | skipped |
+| `infrastructure_failure` | a tool failed (no kernel, a crash, an emit error), not the proof | error |
+
+Only `verified` and `checker_only` are successes, and only they list
+artifacts: a rejected or failed build vouches for no bytes, and the CLI removes
+the old receipt before it starts. `curve receipt verify` rehashes the entry,
+sources, artifacts and toolchain and exits 1 on any mismatch or unsuccessful
+result. `curve receipt junit` writes one testsuite per receipt with a case for
+the result, each law, each selected export and each artifact (rehashed), and an
+error case for a receipt that is missing. A kernel rejection is not attributed
+to individual laws, so they stay `checker_only` while the suite is `rejected`.

@@ -23,6 +23,7 @@ import type { BunPlugin } from "bun";
 import * as Curve from "./curve.ts";
 import * as Comp from "./comp.ts";
 import * as Safe from "./safe.ts";
+import type { Trace } from "../optimization/proof_receipt.ts";
 
 // Main
 // ====
@@ -42,6 +43,7 @@ const USAGE = [
   ["curve <file.curve> -o <out>", "build a binary, or C, JS, .mjs or CurveTT by extension"],
   ["curve <file.curve> --check-only", "check the file and its imports; run nothing"],
   ["curve <file.curve> --verdict", "check it, then recheck it with the proven kernel"],
+  ["curve <file.curve> ... --receipt <r.json>", "record what was checked and built (curve receipt --help)"],
   ["curve <file.curve> --publish [<name>@<version>]", "publish the file and its imports; a name needs login"],
   ["curve link <name>@<version> 0x<hash>", "name a package already on the hub"],
   ["curve login", "log in to Curve Hub for --publish <name>@…"],
@@ -141,6 +143,11 @@ async function cli(): Promise<void> {
       cli_say(2, "curve web: " + book_err(error) + "\n");
       process.exitCode = 1;
     }
+    return;
+  }
+  if (args[0] === "receipt") {
+    const { receiptCli } = await import("../optimization/proof_cli.ts");
+    process.exitCode = receiptCli(args.slice(1));
     return;
   }
   if (args[0] === "optimize") {
@@ -267,6 +274,8 @@ async function cli_file(args: string[]): Promise<void> {
   let checkup = false;
   let publish = false;
   let named: string | undefined;
+  let receipt: string | undefined;
+  const select: string[] = [];
   for (let i = 0; i < args.length; i += 1) {
     const a = args[i];
     if (a === "--help" || a === "-h") {
@@ -284,6 +293,10 @@ async function cli_file(args: string[]): Promise<void> {
         named = args[i];
         named_parts(named);
       }
+    } else if (a === "--receipt" || a === "--export") {
+      i += 1;
+      const v = args[i] ?? cli_fail(a + " needs a value");
+      a === "--receipt" ? receipt = v : select.push(v);
     } else if (a === "-o") {
       i += 1;
       outs.push(args[i] ?? cli_fail("-o needs an output file"));
@@ -308,7 +321,7 @@ async function cli_file(args: string[]): Promise<void> {
   if (publish && (outs.length !== 0 || only || verdict || checkup)) {
     cli_fail("--publish takes no other option");
   }
-  if ((only || verdict) && (outs.length !== 0 || checkup || (only && verdict))) {
+  if (only && outs.length !== 0 || (only || verdict) && (checkup || only && verdict)) {
     cli_fail((verdict ? "--verdict" : "--check-only") + " takes no other option");
   }
   // args go to a plain run only: any option (all start with -) refuses them
@@ -319,6 +332,18 @@ async function cli_file(args: string[]): Promise<void> {
     cli_fail("--checkup takes no -o: a binary holds one main, so build each"
       + " import alone");
   }
+  if (receipt !== undefined ? publish || checkup || !(only || verdict
+    || outs.length !== 0) : select.length !== 0) {
+    cli_fail("--receipt goes with --check-only, --verdict or -o; --export with --receipt");
+  }
+  if (receipt !== undefined) {
+    // a stale receipt never stands in for this run
+    fs.rmSync(receipt, { force: true });
+  }
+  const seen = new Map<string, string | null>();
+  TRACE = receipt === undefined ? null : { version: VERSION + BUILD, file, select, seen,
+    outs: [], stage: "check", mode: only ? "check" : outs.length === 0 ? "verdict"
+      : verdict ? "verified_build" : "build" };
   try {
     if (file.endsWith(".html")) {
       return await cli_bundle(file, outs[0]);
@@ -329,11 +354,11 @@ async function cli_file(args: string[]): Promise<void> {
     if (checkup) {
       return await cli_checkup(file);
     }
-    const seen = new Map<string, string | null>();
     const book = await book_read(file, undefined, seen);
+    if (TRACE) TRACE.book = book;
     if (only || verdict) {
       process.exitCode = cli_verdict(book, verdict);
-      return;
+      if (outs.length === 0 || process.exitCode !== 0) return;
     }
     if (outs.length === 0) {
       process.exitCode = book_run(book, [file, ...argv]);
@@ -362,12 +387,22 @@ async function cli_file(args: string[]): Promise<void> {
           + " directory");
       }
     }
+    if (TRACE) TRACE.stage = "emit";
     for (const out of outs) {
       cli_emit(book, out);
+      TRACE?.outs.push(out);
     }
   } catch (e) {
+    if (TRACE) {
+      e instanceof Check_Fail ? (TRACE.book = e.book, TRACE.rejected = e.why) : TRACE.error = e;
+    }
     cli_say(2, book_err(e) + "\n");
     process.exitCode = 1;
+  } finally {
+    if (TRACE && receipt !== undefined) {
+      const { writeReceipt } = await import("../optimization/proof_receipt.ts");
+      if (!writeReceipt(TRACE, receipt)) process.exitCode = 1;
+    }
   }
 }
 
@@ -949,6 +984,7 @@ async function pow_mine(hash: string, bytes: number): Promise<number> {
 // them: they come in through imports, and a hint names them.
 function cli_verdict(book: Curve.Book, kernel: boolean): number {
   const bad = book_promises(book);
+  if (TRACE) [TRACE.stage, TRACE.promises] = ["kernel", bad];
   const n   = new Set(bad.flatMap(([, ks]) => ks)).size;
   if (n !== 0) {
     const own = bad.some(([, ks]) => ks.some((k) =>
@@ -964,6 +1000,7 @@ function cli_verdict(book: Curve.Book, kernel: boolean): number {
     return 1;
   }
   const why = kernel ? Safe.safe_check(book) : null;
+  if (TRACE && kernel) TRACE.kernel = why;
   if (why !== null) {
     cli_say(2, FAIL + "\n" + why + "\n" + MISMATCH + "\n");
     return 1;
@@ -1089,15 +1126,18 @@ async function book_read(file: string, base?: Curve.Book,
         + " found.\nThe code is incomplete, and not a valid proof yet.";
     }
   } catch (e) {
-    throw new Check_Fail(e);
+    throw new Check_Fail(e, book);
   }
   return book;
 }
 
 // a failed check: curve2's reason, which book_err prints under FAIL
 class Check_Fail {
-  constructor(readonly why: unknown) {}
+  constructor(readonly why: unknown, readonly book?: Curve.Book) {}
 }
+
+// --receipt: what this run checked and wrote (optimization/proof_receipt.ts)
+let TRACE: Trace | null = null;
 
 function book_seed(base: Curve.Book): Curve.Book {
   const book = Curve.book_nil();

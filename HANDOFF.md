@@ -31,6 +31,8 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 
 ## Current state
 
+2026-11-22. Curve verification and module builds can write structured receipts. `--receipt <r.json>` works with `--check-only`, `--verdict` and `-o`, and `--verdict -o` builds only after the kernel passes. `--export <name>` requires named module exports. `curve receipt verify` rehashes the recorded bytes and toolchain, and `curve receipt junit` writes deterministic JUnit XML. A receipt records verified, checker_only, rejected, skipped or infrastructure_failure for the run and each law. Only verified and checker_only receipts list artifacts. The code is in `optimization/proof_receipt.ts`, `proof_junit.ts` and `proof_cli.ts`, with small hooks in `curve2/main.ts`. Eight real-CLI tests in `optimization/proof_receipt.test.ts` cover a kernel pass, a mutated law, a missing kernel, an artifact mismatch, a missing selected export, a missing receipt and unchanged output. Without `--receipt`, the old and new CLIs gave the same output and exit code for 280 runs over test files. `main.ts` is 13,786 of its 16,000 ttok, and `safe.ts` is 23,997 of its 24,000 because `LEAN_VERSION` is now exported.
+
 2026-11-18. React and outbound HTTPS PR [#4](https://github.com/tenpointdata/curve/pull/4) passed the GitHub repository gate and merged into `tenpointdata/curve` main at `a4706173`. Main includes inbound HTTP and HTTPS, verified outbound HTTPS actions, relative JSX imports and typed conditional JSX rendering.
 
 2026-11-20. The release integration includes the keyed React and binary streaming commit `699a1865`. It adds checked, keyed `.map()` lowering for scalar and record array props, plus a prop bridge for ordinary JavaScript data. The streaming handler receives request metadata and reads or writes binary chunks under host backpressure. It distinguishes clean completion, a failed body and a peer disconnect.
@@ -51,6 +53,8 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 
 ### Agents
 
+- Attribute CurveTT kernel rejections to individual laws. Small to medium. Today a kernel failure rejects the receipt while every law remains `checker_only`. Done when the kernel names the failing definition and the receipt marks only that law `rejected`.
+- Record a GPU binary's `<out>.gpu` companion in receipts. Small. Done when a GPU build's receipt digests both files.
 - Expand JSX beyond scalar-field records and single-element list items. Done when the added prop and child forms have checked lowering and verified browser behavior.
 - Add streaming outbound HTTPS. Done when approved origins and TLS trust apply to bounded response streams and client cancellation reaches the upstream connection.
 - Add a live native evaluator adapter. Small integration after the evaluator's retry semantics are pinned. Done when an interrupted bounded run resumes from exact pending request and result identities without duplicate work or unaccounted spend.
@@ -86,6 +90,7 @@ GitHub rejected issue creation because Issues is disabled. The web follow-ups, n
 
 ## Decisions
 
+- Put receipts under `optimization/` because CI runs main's `gates/repo.ts` allow list, which would reject a new top-level directory. Receipts contain no timestamps, and their paths are relative to the receipt, so identical inputs give identical bytes. JUnit passes only kernel-verified laws and skips checker-only laws, so a test-retirement ledger credits independent evidence alone. The CLI deletes the requested receipt before it starts, so a crash leaves nothing to mistake for success.
 - Use keyed React fragments to retain DOM identity across list reorders. Run response continuations only when the host pulls a chunk and release the request reader on cancellation.
 - Represent outbound requests and continuations as checked Curve actions interpreted by the Bun host. Keep URL authority, trust roots and resource limits in host configuration.
 - Use Bun for routing and TLS. Keep Curve responsible for typed application logic and generated view data. React owns interactive state and browser rendering through a small adapter.

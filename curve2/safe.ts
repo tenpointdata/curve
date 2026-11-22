@@ -158,7 +158,7 @@ const MODEL_FUEL = 1 << 22;
 const MODEL_DEPTH = 8;
 
 // only this compiler release may build a cached kernel
-const LEAN_VERSION = "4.34.0";
+export const LEAN_VERSION = "4.34.0";
 
 const QS = ["Q0", "Q1", "Q2"];
 const MARK = ["-", "", "+"];

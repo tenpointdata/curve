@@ -38,6 +38,7 @@ jobs:
       - run: bun curve2/main.ts web jsx demos/web_react/App.tsx -o "$RUNNER_TEMP/Generated.curve"
       - run: bun test --preload ./curve2/main.ts web/
       - run: bun test --preload ./curve2/main.ts optimization/optimization.test.ts
+      - run: bun test optimization/proof_receipt.test.ts
       - name: Verify source installation
         run: |
           sh scripts/build.sh "$RUNNER_TEMP/curve-install"
