@@ -32,6 +32,8 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 
 ## Current state
 
+2026-11-22. `toolchain/` releases a reproducible Curve and CurveTT toolchain for product CI. Manifest `toolchain/manifests/curve-2.0.40-a9173723-lean-4.34.0.toolchain` pins Curve commit `a9173723` (tree `26a1cd2f`, verified ESM emission with `--export`), Bun 1.3.12, Lean 4.34.0 and `curvett.lean`, and the kernel binary per platform. On a clean Debian worker (`toolchain/worker/`), Insight's real `scripts/curve-proofs.ts` at `7257220a3c` (`claude/curve-form-capacity`) passed online and again with no network from the content-addressed mirror. Both event-form and form-capacity modules reproduced their checked-in bytes. Three fresh-container builds produced the same linux-arm64 kernel. On macOS arm64, a mirror filled from the release URLs and an `--offline` install rebuilt the darwin-arm64 kernel to its pinned digest, and the same Insight gate passed with the installed launcher. A tampered installed kernel stopped the launcher with both digests. A tampered mirror input and a tampered installed kernel each failed with the expected and actual digests. Kernels are pinned for darwin-arm64 and linux-arm64; the x64 kernels are unpinned, and `a9173723` exists only on the local branch `codex/verified-curve-modules`, so release hosts get it from a mirror made with `--source`.
+
 2026-11-18. React and outbound HTTPS PR [#4](https://github.com/tenpointdata/curve/pull/4) passed the GitHub repository gate and merged into `tenpointdata/curve` main at `a4706173`. Main includes inbound HTTP and HTTPS, verified outbound HTTPS actions, relative JSX imports and typed conditional JSX rendering.
 
 2026-11-20. The release integration includes the keyed React and binary streaming commit `699a1865`. It adds checked, keyed `.map()` lowering for scalar and record array props, plus a prop bridge for ordinary JavaScript data. The streaming handler receives request metadata and reads or writes binary chunks under host backpressure. It distinguishes clean completion, a failed body and a peer disconnect.
@@ -52,6 +54,7 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 
 ### Agents
 
+- Wire Insight's release CI to `toolchain/worker/gate.sh <manifest> <mirror> . <rev> --offline` once `claude/curve-form-capacity` merges (tracks tenpointdata/roca-insight#6601). Small. Done when Insight's pipeline fails on a module drift or a wrong toolchain digest.
 - Expand JSX beyond scalar-field records and single-element list items. Done when the added prop and child forms have checked lowering and verified browser behavior.
 - Add streaming outbound HTTPS. Done when approved origins and TLS trust apply to bounded response streams and client cancellation reaches the upstream connection.
 - Add a live native evaluator adapter. Small integration after the evaluator's retry semantics are pinned. Done when an interrupted bounded run resumes from exact pending request and result identities without duplicate work or unaccounted spend.
@@ -59,6 +62,7 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 
 ### Human
 
+- Toolchain distribution: push `codex/verified-curve-modules` (or tag `a9173723`) to tenpointdata/curve, give the mirror a durable home (CI cache or bucket keyed by the manifest's sha256), and pin the x64 kernels by running `install` once on an x64 macOS and Linux host. Done when a release runner installs from that mirror with `--offline` on each platform it uses.
 - GitHub Issues is disabled on the public remote, which rejected both follow-up filings with HTTP 410. Enable it if issues should be maintained there.
 
 ### Blocked
@@ -88,6 +92,7 @@ GitHub rejected issue creation because Issues is disabled. The web follow-ups, n
 
 ## Decisions
 
+- Product CI identifies a Curve toolchain by an immutable line-oriented manifest, not by a launcher or `$PATH`. Inputs live in a content-addressed mirror and are checked by sha256 at every install. The CurveTT kernel is rebuilt with the pinned Lean and must match a per-platform digest, because Lean's build was shown to be reproducible. The launcher re-verifies the installed tree on every run and sets `CURVETT`, so `~/.curve` is never consulted. A POSIX shell installer is used because Bun is itself one of the pinned inputs.
 - Use keyed React fragments to retain DOM identity across list reorders. Run response continuations only when the host pulls a chunk and release the request reader on cancellation.
 - Represent outbound requests and continuations as checked Curve actions interpreted by the Bun host. Keep URL authority, trust roots and resource limits in host configuration.
 - Use Bun for routing and TLS. Keep Curve responsible for typed application logic and generated view data. React owns interactive state and browser rendering through a small adapter.

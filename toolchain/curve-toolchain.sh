@@ -109,7 +109,7 @@ cmd_mirror() {
       *) die "unknown mirror option $1" ;;
     esac
   done
-  [ -n "$platforms" ] || platforms=$(platform)
+  [ -n "$platforms" ] || platforms=" $(platform)"
   mkdir -p "$mirror/sha256"
   set -- $(record "$manifest" source curve)
   commit=$1; tree=$3; archive=$5
