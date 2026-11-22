@@ -1,6 +1,6 @@
 # Curve handoff
 
-**Last updated:** 2026-11-20 15:34 MST, by codex-mcp-client: Combined the verified keyed JSX and duplex streaming feature with the gate-loader, targeted cache timeout and host proof documentation ahead of a source merge. Earlier hand-offs are under Deltas and in `ej handoff log`.
+**Last updated:** 2026-11-21 21:30 MST, by codex-mcp-client: Added verified ESM emission with explicit export selection in the local Curve branch. Earlier hand-offs are under Deltas and in `ej handoff log`.
 
 ## Handoff policy
 
@@ -31,6 +31,8 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 
 ## Current state
 
+2026-11-21. Main is `7327675e` after [PR #8](https://github.com/tenpointdata/curve/pull/8). The local verified-module candidate lets `--verdict -o module.mjs` check and emit the same book. Repeatable `--export` selects the reachable public definitions. CLI regressions passed with CurveTT and the test double. Insight's event-form proof entry emitted four functions in 9,166 bytes. Its 15 laws and targeted Bun and Vite parity checks passed locally under [roca-insight#6233](https://github.com/tenpointdata/roca-insight/issues/6233).
+
 2026-11-18. React and outbound HTTPS PR [#4](https://github.com/tenpointdata/curve/pull/4) passed the GitHub repository gate and merged into `tenpointdata/curve` main at `a4706173`. Main includes inbound HTTP and HTTPS, verified outbound HTTPS actions, relative JSX imports and typed conditional JSX rendering.
 
 2026-11-20. The release integration includes the keyed React and binary streaming commit `699a1865`. It adds checked, keyed `.map()` lowering for scalar and record array props, plus a prop bridge for ordinary JavaScript data. The streaming handler receives request metadata and reads or writes binary chunks under host backpressure. It distinguishes clean completion, a failed body and a peer disconnect.
@@ -51,6 +53,8 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 
 ### Agents
 
+- Qualify stack-safe non-tail recursion in JS modules. A 20,000-binding Insight fold overflowed in Bun; the product bounds individual calls. Done when a 100,000-item fold agrees with its iterative oracle in Bun and a browser, with existing closure and tail-call coverage passing.
+- Generate typed host declarations for selected Curve exports. Done when a Bun and Vite consumer typechecks against the exported signatures and constructor shapes from the same build.
 - Expand JSX beyond scalar-field records and single-element list items. Done when the added prop and child forms have checked lowering and verified browser behavior.
 - Add streaming outbound HTTPS. Done when approved origins and TLS trust apply to bounded response streams and client cancellation reaches the upstream connection.
 - Add a live native evaluator adapter. Small integration after the evaluator's retry semantics are pinned. Done when an interrupted bounded run resumes from exact pending request and result identities without duplicate work or unaccounted spend.
@@ -86,6 +90,7 @@ GitHub rejected issue creation because Issues is disabled. The web follow-ups, n
 
 ## Decisions
 
+- Verify the full book before any verified module write, including imports outside the selected JS exports. Keep existing default JS module exports for other consumers.
 - Use keyed React fragments to retain DOM identity across list reorders. Run response continuations only when the host pulls a chunk and release the request reader on cancellation.
 - Represent outbound requests and continuations as checked Curve actions interpreted by the Bun host. Keep URL authority, trust roots and resource limits in host configuration.
 - Use Bun for routing and TLS. Keep Curve responsible for typed application logic and generated view data. React owns interactive state and browser rendering through a small adapter.
@@ -97,6 +102,7 @@ GitHub rejected issue creation because Issues is disabled. The web follow-ups, n
 ## Deltas
 
 <!-- composite:deltas · newest first; Composite rewrites this block on every merge (ej handoff merge / merge_handoff) -->
+- **2026-11-21 21:30 MST** · codex-mcp-client · `local-release` at `7327675`, no commits · `h-f8cd33` — Added verified ESM emission with explicit export selection in the local Curve branch. Verified passing and rejected modules, output preservation, existing unverified emission, and generation from Insight's event-form PROOF.curve with CurveTT. **Next:** Qualify compiler distribution for the Insight reliability gate, then investigate stack-safe non-tail JS and generated host declarations. Curve GitHub Issues returned 410; Insight adoption is tracked in roca-insight#6233. **Decided:** Verify the full program including imports before writing selected exports from the same book. Keep existing unverified emit and loader behavior.
 - **2026-11-20 15:34 MST** · codex-mcp-client · `main` at `e648eb9`, no commits · `h-fc1881` — Combined the verified keyed JSX and duplex streaming feature with the gate-loader, targeted cache timeout and host proof documentation ahead of a source merge. Verified the current optimization gate through independent Lean 4.34.0. **Next:** Merge the tested replacement after repository CI. Build and deliver exactly the merged source to local-release; shell launchers use the primary checkout. Keep the existing hosted and cluster gates open. **Decided:** Keep optimizer and linter tests in their own Bun processes because curve-lint patches the compiler as Bun loads it. Preserve the verified 20-second timeout for the slow cache test, and verify full-duplex transport on Bun 1.4.0.
 - **2026-11-20 08:24 MST** · claude-code · `ej/20261119-115321-750c57` `0d29806`→`9e8323e` (1 commit) · `h-7ec055` — Got the curve local-release delivery past its blocker. Build 9635d4761b874240 failed in the bun test step (16 pass, 38 fail, 2 errors) because the pipeline ran optimization, curve-lint and cache tests in one bun process: curve-lint must patch curve2 before anything loads it, and the optimizer's preload loads it first. Split the suite into three steps (optimization with --preload, curve-lint, cache) by re-registering the pipeline's test steps; added a 20 s timeout to one cache test that takes about 6.5 s. Retried the build (77453dfec2fe4c45, 20261120.152353, 151/151 tests), deployed it to local-release, and verified it. **Decided:** Split the pipeline's bun suite into three commands rather than adding a bunfig preload: the preload loads curve2 before curve-lint can patch it, so the groups cannot share a process. Kept the source changes to one test timeout and changed the pipeline config, not the repo's test layout.
 - **2026-11-18 10:56 MST** · codex-mcp-client · `curve-web-next` `5d6a735`→`a470617` (1 commit) · `h-75fdd1` — Merged PR #4 after GitHub CI passed, then implemented keyed JSX array lowering and binary HTTP request and response streaming. Verified true duplex transport and disconnect handling with Bun 1.4.0, and DOM identity after React list reordering in Chrome. **Next:** Track streaming outbound HTTPS and additional React prop and child forms in the handoff while Issues is disabled. **Decided:** Use checked keyed view nodes and a generated prop schema for JavaScript arrays. Drive streaming continuations on host pulls with bounded byte chunks and cancellation. Preserve existing text handlers and make the runtime version boundary for verified duplex behavior explicit.

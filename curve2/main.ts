@@ -41,7 +41,8 @@ const USAGE = [
   ["curve <file.curve> [args]", "check the file, then run main with args"],
   ["curve <file.curve> -o <out>", "build a binary, or C, JS, .mjs or CurveTT by extension"],
   ["curve <file.curve> --check-only", "check the file and its imports; run nothing"],
-  ["curve <file.curve> --verdict", "check it, then recheck it with the proven kernel"],
+  ["curve <file.curve> --verdict [-o <out.mjs>]", "check with the proven kernel before emitting"],
+  ["curve <file.curve> -o <out.mjs> --export <name>", "select a module export (repeatable)"],
   ["curve <file.curve> --publish [<name>@<version>]", "publish the file and its imports; a name needs login"],
   ["curve link <name>@<version> 0x<hash>", "name a package already on the hub"],
   ["curve login", "log in to Curve Hub for --publish <name>@…"],
@@ -260,6 +261,7 @@ function ver_newer(ver: string): boolean {
 // cli_file checks, runs, builds, publishes or bundles a file
 async function cli_file(args: string[]): Promise<void> {
   const outs: string[] = [];
+  const exports: string[] = [];
   const argv: string[] = [];
   let file: string | undefined;
   let only = false;
@@ -287,6 +289,11 @@ async function cli_file(args: string[]): Promise<void> {
     } else if (a === "-o") {
       i += 1;
       outs.push(args[i] ?? cli_fail("-o needs an output file"));
+    } else if (a === "--export") {
+      const name = args[++i];
+      if (!name || name.startsWith("-")) cli_fail("--export needs a definition name");
+      if (exports.includes(name)) cli_fail("duplicate --export " + name);
+      exports.push(name);
     } else if (a === "--") {
       argv.push(...args.splice(i + 1));
     } else if (a.startsWith("-")) {
@@ -308,8 +315,13 @@ async function cli_file(args: string[]): Promise<void> {
   if (publish && (outs.length !== 0 || only || verdict || checkup)) {
     cli_fail("--publish takes no other option");
   }
-  if ((only || verdict) && (outs.length !== 0 || checkup || (only && verdict))) {
-    cli_fail((verdict ? "--verdict" : "--check-only") + " takes no other option");
+  const module = outs.length === 1 && outs[0].endsWith(".mjs") && !file.endsWith(".html");
+  if (exports.length !== 0 && !module) cli_fail("--export requires one .mjs output");
+  if (only && (outs.length !== 0 || verdict || checkup)) {
+    cli_fail("--check-only takes no other option");
+  }
+  if (verdict && (checkup || (outs.length !== 0 && !module))) {
+    cli_fail("--verdict can only emit a single .mjs output");
   }
   // args go to a plain run only: any option (all start with -) refuses them
   if (argv.length !== 0 && args.some((a) => a.startsWith("-") && a !== "--")) {
@@ -331,7 +343,7 @@ async function cli_file(args: string[]): Promise<void> {
     }
     const seen = new Map<string, string | null>();
     const book = await book_read(file, undefined, seen);
-    if (only || verdict) {
+    if (only || (verdict && outs.length === 0)) {
       process.exitCode = cli_verdict(book, verdict);
       return;
     }
@@ -362,8 +374,12 @@ async function cli_file(args: string[]): Promise<void> {
           + " directory");
       }
     }
+    if (verdict && cli_verdict(book, true) !== 0) {
+      process.exitCode = 1;
+      return;
+    }
     for (const out of outs) {
-      cli_emit(book, out);
+      cli_emit(book, out, exports.length === 0 ? undefined : exports);
     }
   } catch (e) {
     cli_say(2, book_err(e) + "\n");
@@ -430,9 +446,9 @@ function output_conflicts(out: string, ins: Set<string>): boolean {
     || [...ins].some((input) => same_file(at, input))));
 }
 
-function cli_emit(book: Curve.Book, out: string): void {
+function cli_emit(book: Curve.Book, out: string, exports?: readonly string[]): void {
   if (out.endsWith(".mjs")) {
-    fs.writeFileSync(out, Comp.js_lib(book, true));
+    fs.writeFileSync(out, Comp.js_lib(book, true, exports));
   } else if (/\.c?js$/.test(out)) {
     fs.writeFileSync(out, Comp.js_book(book));
   } else if (out.endsWith(".c")) {
