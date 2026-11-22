@@ -56,6 +56,7 @@ allow("curve2/curve.ts", 48000);
 allow("curve2/comp.ts", 66000);
 allow("curve2/main.ts", 16000);
 allow("curve2/safe.ts", 24000);
+allow("curve2/abi.ts", 8000);
 allow("curve2/curvett.lean", 64000);
 allow(/^curve2\/effs\/[a-z0-9_]+\.(c|js)$/);
 allow(/^curve2\/pack\/(\.gitignore|package\.json|tsconfig\.json|bun\.lock)$/);

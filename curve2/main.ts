@@ -23,6 +23,7 @@ import type { BunPlugin } from "bun";
 import * as Curve from "./curve.ts";
 import * as Comp from "./comp.ts";
 import * as Safe from "./safe.ts";
+import * as Abi from "./abi.ts";
 
 // Main
 // ====
@@ -43,6 +44,8 @@ const USAGE = [
   ["curve <file.curve> --check-only", "check the file and its imports; run nothing"],
   ["curve <file.curve> --verdict [-o <out.mjs>]", "check with the proven kernel before emitting"],
   ["curve <file.curve> -o <out.mjs> --export <name>", "select a module export (repeatable)"],
+  ["curve <file.curve> -o <out.mjs> -o <out.d.mts>", "emit a guarded module and its declarations"],
+  ["  [--type <curve type>=<TS name>]", "name a declared datatype (repeatable)"],
   ["curve <file.curve> --publish [<name>@<version>]", "publish the file and its imports; a name needs login"],
   ["curve link <name>@<version> 0x<hash>", "name a package already on the hub"],
   ["curve login", "log in to Curve Hub for --publish <name>@…"],
@@ -262,6 +265,7 @@ function ver_newer(ver: string): boolean {
 async function cli_file(args: string[]): Promise<void> {
   const outs: string[] = [];
   const exports: string[] = [];
+  const types = new Map<string, string>();
   const argv: string[] = [];
   let file: string | undefined;
   let only = false;
@@ -294,6 +298,11 @@ async function cli_file(args: string[]): Promise<void> {
       if (!name || name.startsWith("-")) cli_fail("--export needs a definition name");
       if (exports.includes(name)) cli_fail("duplicate --export " + name);
       exports.push(name);
+    } else if (a === "--type") {
+      const m = /^([^=\s]+)=([^=\s]+)$/.exec(args[++i] ?? "");
+      if (m === null) cli_fail("--type needs <curve type>=<TypeScript name>");
+      if (types.has(m[1])) cli_fail("duplicate --type " + m[1]);
+      types.set(m[1], m[2]);
     } else if (a === "--") {
       argv.push(...args.splice(i + 1));
     } else if (a.startsWith("-")) {
@@ -315,13 +324,17 @@ async function cli_file(args: string[]): Promise<void> {
   if (publish && (outs.length !== 0 || only || verdict || checkup)) {
     cli_fail("--publish takes no other option");
   }
-  const module = outs.length === 1 && outs[0].endsWith(".mjs") && !file.endsWith(".html");
+  const dts = outs.filter((o) => o.endsWith(".d.mts"));
+  const module = !file.endsWith(".html") && dts.length <= 1
+    && outs.filter((o) => o.endsWith(".mjs")).length === 1
+    && outs.length === dts.length + 1;
+  if (types.size !== 0 && dts.length === 0) cli_fail("--type requires a .d.mts output");
   if (exports.length !== 0 && !module) cli_fail("--export requires one .mjs output");
   if (only && (outs.length !== 0 || verdict || checkup)) {
     cli_fail("--check-only takes no other option");
   }
   if (verdict && (checkup || (outs.length !== 0 && !module))) {
-    cli_fail("--verdict can only emit a single .mjs output");
+    cli_fail("--verdict can only emit a single .mjs output (and its .d.mts)");
   }
   // args go to a plain run only: any option (all start with -) refuses them
   if (argv.length !== 0 && args.some((a) => a.startsWith("-") && a !== "--")) {
@@ -355,7 +368,7 @@ async function cli_file(args: string[]): Promise<void> {
       t.$ === "Def" && t.i !== undefined ? t.i.map(path_real) : [])]);
     const outputs = new Map<string, string>();
     for (const out of outs) {
-      const binary = !/\.(mjs|c?js|c|curvett)$/.test(out);
+      const binary = !/\.(mjs|d\.mts|c?js|c|curvett)$/.test(out);
       const full = path.resolve(out);
       const at = path.join(path_real(path.dirname(full)), path.basename(full));
       for (const key of binary ? [at, at + ".gpu"] : [at]) {
@@ -378,8 +391,17 @@ async function cli_file(args: string[]): Promise<void> {
       process.exitCode = 1;
       return;
     }
+    const picked = exports.length === 0 ? undefined : exports;
+    if (dts.length !== 0) {
+      // one book, one schema: both files or neither
+      const mjs = outs.find((o) => o.endsWith(".mjs"))!;
+      const abi = Abi.abi_module(book, picked, types, path.basename(file));
+      fs.writeFileSync(mjs, abi.mjs);
+      fs.writeFileSync(dts[0], abi.dts);
+      return;
+    }
     for (const out of outs) {
-      cli_emit(book, out, exports.length === 0 ? undefined : exports);
+      cli_emit(book, out, picked);
     }
   } catch (e) {
     cli_say(2, book_err(e) + "\n");
