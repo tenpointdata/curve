@@ -20,7 +20,11 @@ net=bridge; mount=rw
 if [ "${1-}" = --offline ]; then net=none; mount=ro; shift; fi
 if [ "${1-}" = -- ]; then shift; else set -- bun scripts/curve-proofs.ts; fi
 image=${GATE_IMAGE:-curve-toolchain-worker}
-docker build -q -t "$image" "$here" >/dev/null || die 'could not build the worker image'
+# the image is built once (or pulled into place by the host); a rebuild is
+# GATE_REBUILD=1, so an offline host never needs the registry
+if [ -n "${GATE_REBUILD-}" ] || ! docker image inspect "$image" >/dev/null 2>&1; then
+  docker build -q -t "$image" "$here" >/dev/null || die 'could not build the worker image'
+fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT INT TERM
 git -C "$product" archive --format=tar "$rev" ${GATE_PATHS:-scripts proofs shared/curve} > "$work/product.tar" \

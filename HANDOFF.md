@@ -27,6 +27,7 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 - `tools/`, `guide/`, `demos/` and `tests/` contain the editor tools, reference and verification programs.
 - `optimization/` contains the whitepaper contracts, Curve gate laws, SQLite ledger, experiment scheduling, method comparison and read-only DARC archive adapters.
 - `web/` contains HTTP contracts, Bun server integration, JSX lowering and the React adapter. `demos/web_http/` and `demos/web_react/` exercise their public entry points.
+- `toolchain/` pins, mirrors, installs and verifies a Curve and CurveTT toolchain for product CI from immutable manifests, with a clean Linux worker that runs a product's proof gate. See [its README](toolchain/README.md).
 - `paper/`, `media/upstream/`, `evals/` and the inherited changelog preserve upstream source material. Engineering-study receipts and artifacts live in their original run directories.
 
 ## Current state
@@ -72,6 +73,7 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 - Run `curve web --help` and follow the [web guide](web/README.md). Install the locked web dependencies with `bun install --cwd web --frozen-lockfile`, then run `bun test --preload ./curve2/main.ts web/` using Bun 1.4.0 for the duplex acceptance test.
 - Run `curve optimize --help` and follow [the optimization workflow](optimization/README.md). Keep private study inputs and ledgers in the study directories.
 - Publish Curve branches and open pull requests only in [tenpointdata/curve](https://github.com/tenpointdata/curve). The Bend parent is a read-only source for this fork.
+- Release hosts install a pinned toolchain with `sh toolchain/curve-toolchain.sh mirror|install|verify` and run a product's proof gate on the clean worker with `sh toolchain/worker/gate.sh <manifest> <mirror> <product> <rev> --offline`. Upgrades and rollback are in [toolchain/README.md](toolchain/README.md).
 - Hosted distribution requires a configured Curve service.
 
 ## Open work

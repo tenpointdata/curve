@@ -16,5 +16,5 @@ fetch lean linux-arm64 sha256:40b04fdb7fb849d3c80e10c3bbeebc7b7354b6d3f07450b916
 fetch lean linux-x64 sha256:caaa98356098c85dc0fcbbd28e1ec66f39eb6551829972b752ff20e1286b646b https://github.com/leanprover/lean4/releases/download/v4.34.0/lean-4.34.0-linux.tar.zst
 built curvett darwin-arm64 unpinned
 built curvett darwin-x64 unpinned
-built curvett linux-arm64 unpinned
+built curvett linux-arm64 sha256:9e2263b3fc2d16ec534a7ce2f2264c19a8aaee9517506555b491f2fa0169ef24
 built curvett linux-x64 unpinned

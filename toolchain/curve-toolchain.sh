@@ -39,6 +39,43 @@ check_manifest() {
   [ "$(head -n 1 "$1")" = 'curve-toolchain 1' ] || die "$1 is not a curve-toolchain 1 manifest"
 }
 
+# chunk <first> <last> <url> <file>: one byte range, resumed until whole. A
+# connection under 1 KB/s for 30 s is dropped and resumed where it stopped.
+chunk() {
+  [ -f "$4" ] && return 0
+  n=0
+  : >> "$4.tmp"
+  while [ "$(wc -c < "$4.tmp" | tr -d ' ')" -lt $(($2 - $1 + 1)) ]; do
+    have=$(wc -c < "$4.tmp" | tr -d ' ')
+    curl -fsSL --speed-limit 1024 --speed-time 30 -r "$(($1 + have))-$2" "$3" >> "$4.tmp" 2>/dev/null ||
+      { n=$((n + 1)); [ "$n" -lt 50 ] || return 1; sleep 3; }
+  done
+  [ "$(wc -c < "$4.tmp" | tr -d ' ')" -eq $(($2 - $1 + 1)) ] || { rm -f "$4.tmp"; return 1; }
+  mv "$4.tmp" "$4"
+}
+
+# download <url> <out>: the file in 8 MiB ranges, eight in flight. Finished
+# ranges stay in <out>.d, so a reset connection or an interrupted run loses
+# at most the ranges in flight.
+download() {
+  size=$(curl -fsSIL "$1" | tr -d '\r' | awk 'tolower($1) == "content-length:" { n = $2 } END { print n }')
+  case "$size" in ''|*[!0-9]*) curl -fsSL --retry 5 -o "$2" "$1"; return ;; esac
+  step=8388608; mkdir -p "$2.d"; first=0; i=0
+  while [ "$first" -lt "$size" ]; do
+    last=$((first + step - 1)); [ "$last" -lt "$size" ] || last=$((size - 1))
+    printf '%s %s %s\n' "$first" "$last" "$2.d/$(printf %06d "$i")"
+    i=$((i + 1)); first=$((last + 1))
+  done | xargs -P 8 -L 1 sh "$self" _chunk "$1" || true
+  i=$(((size + step - 1) / step))
+  : > "$2"
+  j=0
+  while [ "$j" -lt "$i" ]; do
+    f="$2.d/$(printf %06d "$j")"; [ -f "$f" ] || return 1
+    cat "$f" >> "$2"; j=$((j + 1))
+  done
+  rm -rf "$2.d"
+}
+
 # fetch_input <mirror> <sha256:hex> <url|-> <label> [offline] -> path of the verified input
 fetch_input() {
   want=${2#sha256:}
@@ -48,16 +85,10 @@ fetch_input() {
     [ "${5-}" != offline ] || die "$4 ($2) is not in the mirror $1 and --offline forbids a download"
     have curl || die 'needs curl to fill the mirror'
     mkdir -p "$1/sha256"
-    # a partial download resumes on the next mirror run; only verified bytes
-    # ever get the digest's name
+    # only verified bytes ever get the digest's name
     part="$dest.part"
     printf 'Downloading %s\n' "$3" >&2
-    tries=0
-    until curl -fsSL --retry 5 --retry-all-errors -C - -o "$part" "$3"; do
-      tries=$((tries + 1))
-      [ "$tries" -lt 20 ] || die "could not download $4 from $3; run mirror again to resume"
-      sleep 5
-    done
+    download "$3" "$part" || die "could not download $4 from $3; run mirror again to resume"
     got=$(sha256 "$part")
     [ "$got" = "$want" ] || { rm -f "$part"; die "$4 from $3 has sha256 $got, but the manifest pins $want"; }
     mv "$part" "$dest"
@@ -195,7 +226,9 @@ cmd_verify() {
   printf 'Verified %s\n' "$root"
 }
 
+self=$0
 case "${1-}" in
+  _chunk) chunk "$3" "$4" "$2" "$5" ;;
   mirror) [ "$#" -ge 3 ] || die 'usage: mirror <manifest> <mirror-dir> [--source <git-dir>] [--platform <p>]...'; shift; cmd_mirror "$@" ;;
   install) [ "$#" -ge 4 ] && [ "$#" -le 5 ] || die 'usage: install <manifest> <mirror-dir> <prefix> [--offline]'; shift; cmd_install "$@" ;;
   verify) [ "$#" -eq 2 ] || die 'usage: verify <prefix>'; cmd_verify "$2" ;;
