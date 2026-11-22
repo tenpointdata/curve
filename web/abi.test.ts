@@ -6,7 +6,6 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } fro
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { build } from "vite";
 
 const cli = join(import.meta.dir, "../curve2/main.ts");
 const tscJs = join(import.meta.dir, "node_modules/typescript/bin/tsc");
@@ -513,9 +512,16 @@ describe("vite", () => {
       + "export function rejects() {\n"
       + "  try { m.nat_id(-1); return ''; } catch (e) { return e instanceof TypeError ? e.message : 'wrong'; }\n"
       + "}\n" });
-    await build({ root: d, configFile: false, logLevel: "silent", build: {
-      lib: { entry: join(d, "entry.mjs"), formats: ["es"], fileName: "bundle" },
-      outDir: join(d, "dist"), minify: false, emptyOutDir: true } });
+    // vite runs in its own process: sharing bun test's process with the
+    // server suites under web/ has hung its build.
+    const script = "import { build } from " + JSON.stringify(import.meta.resolve("vite")) + ";\n"
+      + "await build({ root: " + JSON.stringify(d) + ", configFile: false, logLevel: 'silent',"
+      + " build: { lib: { entry: " + JSON.stringify(join(d, "entry.mjs")) + ", formats: ['es'],"
+      + " fileName: 'bundle' }, outDir: " + JSON.stringify(join(d, "dist"))
+      + ", minify: false, emptyOutDir: true } });\n";
+    put(d, { "vite_build.mjs": script });
+    const v = Bun.spawnSync([process.execPath, join(d, "vite_build.mjs")], { cwd: d, timeout: 90_000 });
+    expect(v.exitCode).toBe(0);
     const files = readdirSync(join(d, "dist")).filter((f) => /^bundle\.m?js$/.test(f));
     expect(files.length).toBe(1);
     const text = readFileSync(join(d, "dist", files[0] ?? ""), "utf8");
