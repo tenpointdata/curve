@@ -363,8 +363,8 @@ describe("boundary", () => {
     expect(call(mod, "shape_id", ok)).toEqual(ok);
     expect(call(mod, "color_id", { $: "Green" })).toEqual({ $: "Green" });
     expect(() => call(mod, "shape_id", { $: "Dot", extra: 1 })).toThrow('Dot has no field "extra"');
-    expect(() => call(mod, "shape_id", { $: "Rect", w: 1 })).toThrow("Rect is missing a field");
-    expect(() => call(mod, "shape_id", { $: "Rect", w: 1, z: 2 })).toThrow('Rect is missing field "h"');
+    expect(() => call(mod, "shape_id", { $: "Rect", w: 1 })).toThrow('Rect is missing field "h"');
+    expect(() => call(mod, "shape_id", { $: "Rect", w: 1, z: 2 })).toThrow('Rect has no field "z" and is missing field "h"');
     expect(() => call(mod, "shape_id", { $: "Tri" })).toThrow('expected {$: "Circle" | "Rect" | "Dot"}, got {$: "Tri"}');
     expect(() => call(mod, "shape_id", { w: 1 })).toThrow("argument s");
     expect(() => call(mod, "shape_id", null)).toThrow(TypeError);

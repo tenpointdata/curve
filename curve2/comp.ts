@@ -3081,14 +3081,8 @@ function host(A: HTerm | null, x: string, out: boolean): string {
     : k === "F32" && !out ? `Math.fround(${x})` : x;
 }
 
-// An export's book name, its raw call (no host conversion) and how many of
-// its type's binders (live or erased) that call takes.
-export type LibSig = { k: Name; call: string; n: number };
-
 // Module export keys distinguish imported "lib:value" from root "lib.value".
-// abi, given, writes the export block from the raw calls (abi.ts guards them).
-export function js_lib(book: Curve.Book, mod = false, exports?: readonly string[],
-  abi?: (sigs: LibSig[]) => string): string {
+export function js_lib(book: Curve.Book, mod = false, exports?: readonly string[]): string {
   FL = file_new(book, true);
   const eligible = !mod ? null : [...new Set(book.order)].filter((k) => {
     const t = tld_of(k);
@@ -3106,11 +3100,7 @@ export function js_lib(book: Curve.Book, mod = false, exports?: readonly string[
   }
   const effs = [...FL.effs.values()]
     .map(([m, src]) => `(() => {\n${c_ids(src, m)}\n})();\n\n`).join("");
-  const lib = outs === null ? "" : abi ? abi(outs.map((k) => {
-    const ps = fun_of(k).live.map((_, i) => "a" + i);
-    return { k, n: fun_of(k).n,
-      call: `(${ps}) => run_loop(${name_id("$", k)}(${ps}))` };
-  })) : `export default {\n${outs.map((k) => {
+  const lib = outs === null ? "" : `export default {\n${outs.map((k) => {
     const { live, lays } = fun_of(k);
     const ps = live.map((_, i) => "a" + i);
     const xs = live.map(([, , A], i) => host(A, ps[i], false));

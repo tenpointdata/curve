@@ -214,6 +214,51 @@ The renderer uses a keyed React fragment per item. Reordering the input
 preserves the corresponding DOM nodes. Try the **Reverse items** button in
 the demo.
 
+## Generate TypeScript declarations for a module
+
+Emit the module and its declarations in one command. Both files come from the
+same checked book and the same `--export` list. Add `--verdict` to recheck the
+book with CurveTT before either file is written.
+
+```sh
+curve PROOF.curve --verdict -o rules.mjs -o rules.d.mts \
+  --export resolve:resolve --type resolve:Bind=CurveBinding
+```
+
+TypeScript resolves `import rules from "./rules.mjs"` to `rules.d.mts`. A
+datatype is named `Curve` plus its bare name, for example `CurveScope` or
+`CurveMaybe<A>`. `--type <book name>=<name>` keeps a name the host already
+uses. A name collision fails, and so does a `--type` for a datatype that no
+export uses. If either file cannot be produced, neither is written.
+
+| Curve type | TypeScript | Accepted values |
+| --- | --- | --- |
+| `Nat` | `number` | safe integers ≥ 0. Arithmetic past 2^48−1 fails inside the runtime |
+| `U32` | `number` | integers 0 to 4294967295 |
+| `F32` | `number` | numbers float32 holds exactly, including NaN and ±Infinity |
+| `Bool` | `boolean` | `true` and `false` only |
+| `String`, `Char` | `string` | well-formed UTF-16. A `Char` is one code point |
+| `Array<T>` | `T[]` | a power-of-two length ≥ 1, passed without a copy |
+| `A -> B` | `(x: A) => B` | a unary, curried function as an export parameter or result, or as a callback argument or result |
+| other datatypes | `{ $: "Ctor"; field: T }` | the declared tag and its live fields, with no other keys |
+
+Generic aliases come from families whose parameters are all types or
+quantities. A value-indexed family, such as `Sigma`, is inlined at each use.
+Derivation fails with `ABI of …` for a polymorphic or value-dependent type, a
+type, quantity or equality passed as a value, a function inside a datatype or
+array, an erased binder in a function value, or recursion through a
+value-indexed family.
+
+A module emitted with a `.d.mts` checks every value it receives or returns.
+That includes callback results, nested fields and every list cell, and the
+checks do not use recursion. A value outside its declared type throws a
+`TypeError` that names the export and the path, for example
+`curve abi: resolve:resolve argument bs.tail.head.enabled: expected a boolean, got 0`.
+Numbers are not rounded, strings are not repaired and extra keys are not
+dropped. Each export takes exactly its declared arguments, with no currying,
+and the module object is frozen. A module emitted without a `.d.mts` keeps the
+permissive host conversion.
+
 ## Verify
 
 ```sh

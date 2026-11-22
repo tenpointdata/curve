@@ -27,6 +27,10 @@
 import * as Curve from "./curve.ts";
 import * as Comp from "./comp.ts";
 
+// An export's book name, how many live parameters its call takes and the
+// raw call (no host conversion), read from js_lib's export block.
+export type LibSig = { k: Name; live: number; call: string };
+
 type HTerm = Curve.HTerm;
 type Name = Curve.Name;
 
@@ -219,26 +223,29 @@ function names_apply(fams: AbiFamily[], names: AbiNames): void {
   }
 }
 
-// abi_derive reads each export's first n binders: live ones are its
+// abi_derive reads each export's binders up to its last live parameter, and
+// the erased ones after it, as js_lib's arity does: live ones are its
 // parameters, the rest of its type its result.
-export function abi_derive(book: Curve.Book, sigs: readonly Comp.LibSig[],
+export function abi_derive(book: Curve.Book, sigs: readonly LibSig[],
   names: AbiNames = new Map()): Abi {
   const d: Deriver = { book, fams: [], index: new Map(), probes: new Map(),
     inline: [], where: "" };
-  const exports = sigs.map(({ k, n }): AbiExport => {
+  const exports = sigs.map(({ k, live }): AbiExport => {
     const tld = book.tlds[k];
     d.where = "export " + k;
     const params: Array<[Name, AbiType]> = [];
     let T = tld.T;
-    for (let i = 0; i < n; i++) {
-      const t = Curve.tele_open(book, T);
-      if (t === null) {
-        return fail(d, "fewer binders than its arity");
+    for (let t = Curve.tele_open(book, T); t !== null; t = Curve.tele_open(book, T)) {
+      if (t.q.$ !== "None" && params.length === live) {
+        break;
       }
       if (t.q.$ !== "None") {
         params.push([t.k, conv(d, t.A, false)]);
       }
       T = t.B(probe(d, { kind: "value", k: t.k }));
+    }
+    if (params.length !== live) {
+      fail(d, "fewer binders than its arity");
     }
     return { key: k, params, ret: conv(d, T, false) };
   });
@@ -326,22 +333,43 @@ export function abi_dts(abi: Abi, source: string): string {
 
 // abi_exports_js is the .mjs export block: the schema and the raw calls,
 // bound through the guard.
-export function abi_exports_js(abi: Abi, sigs: readonly Comp.LibSig[]): string {
+export function abi_exports_js(abi: Abi, sigs: readonly LibSig[]): string {
   return ABI_RUNTIME + "const ABI = " + JSON.stringify(abi) + ";\n\n"
     + "export default abi_bind(ABI, {\n" + sigs.map((s) =>
       "  " + JSON.stringify(s.k) + ": " + s.call + ",\n").join("") + "});\n";
 }
 
+// js_lib ends in "export default {" and one line per export,
+//   "key": run_lib((a0,a1) => <host>(run_loop($id(<host>(a0),...))), 2),
+// so the raw call is $id and the arity the count; any other shape is a
+// compiler change this reader must follow, and fails here.
+const LIB_LINE = /^  (\S.*?|\["__proto__"\]): run_lib\(\(.*?\) => .*?run_loop\((\$[\w$]*)\(.*, (\d+)\),$/;
+
+export function lib_sigs(js: string): { head: string; sigs: LibSig[] } {
+  const at = js.lastIndexOf("export default {\n");
+  const lines = js.slice(at).split("\n").slice(1, -2);
+  if (at < 0 || !js.endsWith("\n};\n")) {
+    throw new AbiError("ABI: the module has no export block to guard");
+  }
+  return { head: js.slice(0, at), sigs: lines.map((line) => {
+    const m = LIB_LINE.exec(line);
+    if (m === null) {
+      throw new AbiError("ABI: unrecognized export line: " + line);
+    }
+    const k: unknown = m[1] === '["__proto__"]' ? "__proto__" : JSON.parse(m[1]);
+    if (typeof k !== "string") {
+      throw new AbiError("ABI: unrecognized export key: " + m[1]);
+    }
+    return { k, live: Number(m[3]), call: "(...a) => run_loop(" + m[2] + "(...a))" };
+  }) };
+}
+
 // abi_module emits the guarded module and its declarations from one book.
 export function abi_module(book: Curve.Book, exports: readonly string[] | undefined,
   names: AbiNames, source: string): { mjs: string; dts: string } {
-  let dts = "";
-  const mjs = Comp.js_lib(book, true, exports, (sigs) => {
-    const abi = abi_derive(book, sigs, names);
-    dts = abi_dts(abi, source);
-    return abi_exports_js(abi, sigs);
-  });
-  return { mjs, dts };
+  const { head, sigs } = lib_sigs(Comp.js_lib(book, true, exports));
+  const abi = abi_derive(book, sigs, names);
+  return { mjs: head + abi_exports_js(abi, sigs), dts: abi_dts(abi, source) };
 }
 
 // Guard
@@ -476,18 +504,16 @@ function abi_data(abi, t0, v0, at) {
         bad(node, "{$: " + (tags || "never") + "}");
       }
       const fields = arms.get(v.$);
-      const keys = Object.keys(v);
-      if (keys.length !== fields.length + 1) {
-        const want = new Set(["$", ...fields.map(([k]) => k)]);
-        const extra = keys.find((k) => !want.has(k));
-        throw new TypeError(at + abi_path(node) + ": " + v.$ + (extra === undefined
-          ? " is missing a field" : " has no field " + JSON.stringify(extra)));
+      const lost = fields.find(([k]) => !Object.hasOwn(v, k));
+      const extra = Object.keys(v).length === fields.length + 1 && lost === undefined
+        ? undefined : Object.keys(v).find((k) => k !== "$" && !fields.some(([f]) => f === k));
+      if (lost !== undefined || extra !== undefined) {
+        throw new TypeError(at + abi_path(node) + ": " + v.$ + [extra === undefined ? ""
+          : " has no field " + JSON.stringify(extra), lost === undefined ? ""
+          : " is missing field " + JSON.stringify(lost[0])].filter((x) => x).join(" and"));
       }
       for (let i = fields.length - 1; i >= 0; i--) {
         const [k, f] = fields[i];
-        if (!Object.hasOwn(v, k)) {
-          throw new TypeError(at + abi_path(node) + ": " + v.$ + " is missing field " + JSON.stringify(k));
-        }
         work.push({ t: f, v: v[k], up: node, key: "." + k });
       }
     }
