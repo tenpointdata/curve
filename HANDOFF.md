@@ -26,10 +26,13 @@ Curve is Ten Point Data's fork of Bend 2, a dependently typed language for proof
 - `curve2/` contains the compiler, base library, emitters, CLI and CurveTT kernel.
 - `tools/`, `guide/`, `demos/` and `tests/` contain the editor tools, reference and verification programs.
 - `optimization/` contains the whitepaper contracts, Curve gate laws, SQLite ledger, experiment scheduling, method comparison and read-only DARC archive adapters.
+- `graph/` contains the ordered graph walks for JavaScript hosts: an interned CSR walk and a String-keyed Base `Map`/`Set` walk, their typed boundary, Roca Insight's reference walkers, fixtures, parity tests and the Bun/Chromium bench. See [graph/README.md](graph/README.md).
 - `web/` contains HTTP contracts, Bun server integration, JSX lowering and the React adapter. `demos/web_http/` and `demos/web_react/` exercise their public entry points.
 - `paper/`, `media/upstream/`, `evals/` and the inherited changelog preserve upstream source material. Engineering-study receipts and artifacts live in their original run directories.
 
 ## Current state
+
+2026-11-22. `graph/` qualifies ordered graph traversal in the JavaScript target for the [Insight reliability target](https://github.com/tenpointdata/roca-insight/issues/6601) (board card c-d6f0a7). The interned CSR walk matches Insight's `collectDependents` and `computePermanence` exactly on shaped, random and 100,000-edge graphs. 639 tests pass, including the live Insight functions. The walk runs in bounded stack under Bun and Chromium. Base `Map`/`Set` over Curve Strings is 300 to 700 times slower at 100,000 edges, and it repeats ids that contain a lone U+DC00. Hosts must intern ids. Measurements and limits are in [graph/README.md](graph/README.md).
 
 2026-11-18. React and outbound HTTPS PR [#4](https://github.com/tenpointdata/curve/pull/4) passed the GitHub repository gate and merged into `tenpointdata/curve` main at `a4706173`. Main includes inbound HTTP and HTTPS, verified outbound HTTPS actions, relative JSX imports and typed conditional JSX rendering.
 
@@ -54,6 +57,9 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 - Expand JSX beyond scalar-field records and single-element list items. Done when the added prop and child forms have checked lowering and verified browser behavior.
 - Add streaming outbound HTTPS. Done when approved origins and TLS trust apply to bounded response streams and client cancellation reaches the upstream connection.
 - Add a live native evaluator adapter. Small integration after the evaluator's retry semantics are pinned. Done when an interrupted bounded run resumes from exact pending request and result identities without duplicate work or unaccounted spend.
+- Escape host strings at the JavaScript module boundary. Small to medium (`curve2/comp.ts`, under its ttok cap). A host string holding a lone U+DC00 is read as a packed non-scalar Char, so Base's `Map` merges distinct keys (`graph/walk.test.ts` pins the repeats). Done when every JavaScript string round-trips through `String` and Base's `Map`/`Set` keep `HOST_IDS` apart, with the pinned list empty.
+- Give the JavaScript target a native `Map.bit`. Small. Only C has the intrinsic, so String-keyed Map walks are 300 to 700 times slower than CSR at 100,000 edges, and their stack grows with key length. Done when `graph/bench.ts` shows the String walk within 10x of CSR and its stack is flat across key lengths.
+- Port the parity of the migration cycle diagnostic. Medium, in Roca Insight. Done when a Curve topological order reproduces `resolveMigrationOrder`'s order, and its `id → [blockers]` cycle message byte for byte, on seeded cyclic registries.
 - Run independent verification and release checks. Medium. Done when authorized target environments pass their applicable release checks.
 
 ### Human
@@ -69,6 +75,7 @@ The synthetic truss replay recovered 80 decisions. The best feasible mass was 2.
 - Install Bun. Run `bun curve2/main.ts guide` or `sh scripts/build.sh <install-directory>`, then use the resulting `bin/curve`. Python 3 is required for DARC archive commands. Native code generation uses Clang.
 - Run `curve optimization/gate.curve --check-only`, `bun test --preload ./curve2/main.ts optimization/optimization.test.ts` and `bun gates/repo.ts` with the pinned tokenizer. For the independent gate check, install Lean 4.34.0 and run `curve optimization/gate.curve --verdict`.
 - Run `bun test tools/curve-lint` and `bun test tools/curve-cache/src/cache.test.ts` in separate processes from the optimizer. The linter patches Curve as Bun loads it, while the optimizer preloads the standard Curve loader. Cache integration cases allow two minutes because each runs multiple compiler processes and their runtime varies with load.
+- Run `bun test --preload ./curve2/main.ts ./graph/` (with the `./`) and `bun --preload ./curve2/main.ts graph/bench.ts`. The bench uses Playwright's headless Chromium shell from `~/Library/Caches/ms-playwright`, or `$CHROMIUM`. `bun gates/repo.ts` needs `ttok`; without pipx, a shim on PATH that runs `uvx ttok "$@"` works.
 - Run `curve web --help` and follow the [web guide](web/README.md). Install the locked web dependencies with `bun install --cwd web --frozen-lockfile`, then run `bun test --preload ./curve2/main.ts web/` using Bun 1.4.0 for the duplex acceptance test.
 - Run `curve optimize --help` and follow [the optimization workflow](optimization/README.md). Keep private study inputs and ledgers in the study directories.
 - Publish Curve branches and open pull requests only in [tenpointdata/curve](https://github.com/tenpointdata/curve). The Bend parent is a read-only source for this fork.
@@ -86,6 +93,7 @@ GitHub rejected issue creation because Issues is disabled. The web follow-ups, n
 
 ## Decisions
 
+- Pass graph ids to Curve as host-interned U32s in CSR arrays, not as Curve Strings. Interning keeps every JavaScript identity, and the walk then runs at array speed. String keys are slow in the JavaScript target and unsafe for lone U+DC00. Reverse adjacency stays on the host, built in Insight's order.
 - Use keyed React fragments to retain DOM identity across list reorders. Run response continuations only when the host pulls a chunk and release the request reader on cancellation.
 - Represent outbound requests and continuations as checked Curve actions interpreted by the Bun host. Keep URL authority, trust roots and resource limits in host configuration.
 - Use Bun for routing and TLS. Keep Curve responsible for typed application logic and generated view data. React owns interactive state and browser rendering through a small adapter.
