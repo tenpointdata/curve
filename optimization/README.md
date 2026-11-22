@@ -152,3 +152,7 @@ result. `curve receipt junit` writes one testsuite per receipt with a case for
 the result, each law, each selected export and each artifact (rehashed), and an
 error case for a receipt that is missing. A kernel rejection is not attributed
 to individual laws, so they stay `checker_only` while the suite is `rejected`.
+A definition outside CurveTT's scope is also `rejected`, as the CLI reports
+FAIL. An entry file that cannot be read is an `infrastructure_failure`; a
+missing import is a rejection of the program. The receipt path must be its own
+`.json` file, and `--receipt` does not apply to page bundles.

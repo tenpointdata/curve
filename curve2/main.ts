@@ -332,9 +332,13 @@ async function cli_file(args: string[]): Promise<void> {
     cli_fail("--checkup takes no -o: a binary holds one main, so build each"
       + " import alone");
   }
-  if (receipt !== undefined ? publish || checkup || !(only || verdict
-    || outs.length !== 0) : select.length !== 0) {
+  if (receipt !== undefined ? publish || checkup || !Curve.SOURCE_FILE.test(file)
+    || !(only || verdict || outs.length !== 0) : select.length !== 0) {
     cli_fail("--receipt goes with --check-only, --verdict or -o; --export with --receipt");
+  }
+  if (receipt !== undefined && (!receipt.endsWith(".json")
+    || output_conflicts(receipt, new Set(outs.map(path_real))))) {
+    cli_fail("--receipt needs its own .json file");
   }
   if (receipt !== undefined) {
     // a stale receipt never stands in for this run
@@ -400,8 +404,13 @@ async function cli_file(args: string[]): Promise<void> {
     process.exitCode = 1;
   } finally {
     if (TRACE && receipt !== undefined) {
-      const { writeReceipt } = await import("../optimization/proof_receipt.ts");
-      if (!writeReceipt(TRACE, receipt)) process.exitCode = 1;
+      try {
+        const { writeReceipt } = await import("../optimization/proof_receipt.ts");
+        if (!writeReceipt(TRACE, receipt)) process.exitCode = 1;
+      } catch (e) {
+        cli_say(2, "curve: cannot write receipt " + receipt + ": " + book_err(e) + "\n");
+        process.exitCode = 1;
+      }
     }
   }
 }

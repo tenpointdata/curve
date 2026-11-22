@@ -165,3 +165,26 @@ test("human output and exit codes are unchanged without --receipt", () => {
   expect(curve([gate, "--receipt", join(dir, "r.json")]).status).toBe(1);
   expect(existsSync(join(dir, "x.mjs"))).toBe(false);
 });
+
+test("a receipt path never replaces a source or an output, and bad paths fail cleanly", () => {
+  const { dir, gate } = study();
+  const source = readFileSync(gate, "utf8");
+  expect(curve([gate, "--check-only", "--receipt", gate]).status).toBe(1);
+  expect(readFileSync(gate, "utf8")).toBe(source);
+  const out = join(dir, "out.json");
+  expect(curve([gate, "-o", out, "--receipt", out]).status).toBe(1);
+  expect(existsSync(out)).toBe(false);
+  expect(curve([join(dir, "page.html"), "-o", join(dir, "site"), "--receipt", join(dir, "r.json")]).status).toBe(1);
+  const unwritable = curve([gate, "--check-only", "--receipt", join(dir, "absent", "r.json")]);
+  expect(unwritable.status).toBe(1);
+  expect(unwritable.stderr).toContain("curve: cannot write receipt");
+});
+
+test("an entry that cannot be read is an infrastructure failure", () => {
+  const { dir } = study();
+  const r = join(dir, "r.json");
+  expect(curve([join(dir, "missing.curve"), "--check-only", "--receipt", r]).status).toBe(1);
+  const got = receipt(r);
+  expect(got.result).toBe("infrastructure_failure");
+  expect(got.checks[0]).toMatchObject({ engine: "curve-checker", outcome: "error" });
+});

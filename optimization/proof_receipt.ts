@@ -170,6 +170,13 @@ interface Verdict {
 function verdictOf(t: Trace): Verdict {
   const kernelSkipped: Check = { engine: "curvett", outcome: "skipped" };
   const infra = t.error !== undefined;
+  // an entry that cannot be read was never checked
+  if (t.rejected !== undefined && !existsSync(t.file)) {
+    return {
+      checks: [{ engine: "curve-checker", outcome: "error", detail: message(t.rejected) }, kernelSkipped],
+      result: "infrastructure_failure", reason: message(t.rejected), law: () => "skipped",
+    };
+  }
   if (t.rejected !== undefined) {
     const named = blamed(t.rejected);
     return {
@@ -178,7 +185,8 @@ function verdictOf(t: Trace): Verdict {
       law: (n) => named.has(n) ? "rejected" : "skipped",
     };
   }
-  if (infra && t.stage === "check") {
+  // a failure after the checker returned a book is not the checker's
+  if (infra && t.stage === "check" && t.book === undefined) {
     return {
       checks: [{ engine: "curve-checker", outcome: "error", detail: message(t.error) }, kernelSkipped],
       result: "infrastructure_failure", reason: message(t.error), law: () => "skipped",
@@ -200,6 +208,7 @@ function verdictOf(t: Trace): Verdict {
       result: "infrastructure_failure", reason: message(t.error), law: () => "checker_only",
     };
   }
+  // a kernel failure, or a def outside CurveTT's scope: the CLI says FAIL
   if (typeof t.kernel === "string") {
     return {
       checks: [checker, { engine: "curvett", outcome: "fail", detail: message(t.kernel) }],
