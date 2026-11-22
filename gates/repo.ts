@@ -42,6 +42,7 @@ allow("AGENTS.md");
 allow("CLAUDE.md");
 allow("HANDOFF.md");
 allow("scripts/build.sh");
+allow(/^toolchain\/(README\.md|curve-toolchain\.sh|manifests\/[a-z0-9.-]+\.toolchain|worker\/(Dockerfile|gate\.sh))$/);
 allow(/^web\/(README\.md|package\.json|bun\.lock|[a-z_]+(\.test)?\.(ts|curve))$/);
 allow(/^demos\/web_react\/(App\.tsx|package\.json|bun\.lock)$/);
 allow(/^optimization\/(README\.md|[a-z_]+(\.test)?\.(ts|curve))$/);
