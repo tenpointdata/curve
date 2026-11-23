@@ -1,0 +1,240 @@
+import Base
+# Ordered graph walks for host programs that import this module through the
+# JavaScript target (`curve graph/walk.curve -o walk.mjs`).
+#
+# A walk visits nodes breadth first from its roots, in root order and then in
+# edge order, and answers each node the first time it is reached: the same
+# order a JavaScript Set gets from a queue walk that adds a node before
+# pushing it. Roots are queued, not answered: a root is answered only when an
+# edge reaches it, unless `mark` seeds it as seen first, in which case it is
+# never answered. A dangling node (a target with no out-edges) is answered and
+# expands to nothing. Cycles end because a node is queued at most once after
+# the roots.
+#
+# Two encodings share that contract:
+#
+# - walk: nodes are U32 ids the host interned, edges are CSR arrays
+#   (`off[u]` to `off[u + 1]` index `dst`), and `seen` and `q` are zeroed
+#   arrays the host allocates. Every array has a power-of-two size, as Base's
+#   arrays do. The answer is `q` from the root count to `tail`.
+# - walk_str: nodes are Strings, edges a list of Entry{node, targets} in a
+#   Base Map, `seen` a Base Set. The answer is a list.
+#
+# Both loops count down a Nat fuel. Roots plus edges plus one always suffices:
+# a pop takes a root or a node pushed by an edge, each at most once. A host
+# checks `head == tail` (or the Done flag) to know the walk was not cut short.
+
+# CSR walk
+# ========
+
+type Walk is Type:
+  Walk{off: Array<U32>, dst: Array<U32>, seen: Array<U32>, q: Array<U32>,
+       +head: U32, +tail: U32}
+
+# seed the roots in order; with mark, each is seen before the walk starts
+def walk.seed.mark(+v: U32, mark: Bool, seen: Array<U32>) -> Array<U32>:
+  match mark:
+    case False{}:
+      seen
+    case True{}:
+      seen[v] <- 1
+
+def walk.seed(roots: List<&2, U32>, +mark: Bool, w: Walk) -> Walk:
+  match roots:
+    case Nil{}:
+      w
+    case Con{+v, t}:
+      Walk{off, dst, seen, q, head, tail} = w
+      walk.seed(t, mark, Walk{off, dst, walk.seed.mark(v, mark, seen),
+        q[tail] <- v, head, U32.inc(tail)})
+
+# an edge target, already read: queue it unless seen
+def walk.push(+v: U32, fresh: Bool, w: Walk) -> Walk:
+  match fresh:
+    case False{}:
+      w
+    case True{}:
+      Walk{off, dst, seen, q, head, tail} = w
+      Walk{off, dst, seen[v] <- 1, q[tail] <- v, head, U32.inc(tail)}
+
+def walk.seen(+v: U32, off: Array<U32>, dst: Array<U32>, q: Array<U32>,
+              head: U32, tail: U32, r: Array<U32> & U32) -> Walk:
+  (seen, s) = r
+  walk.push(v, U32.is_zero(s), Walk{off, dst, seen, q, head, tail})
+
+def walk.edge(off: Array<U32>, seen: Array<U32>, q: Array<U32>, head: U32,
+              tail: U32, r: Array<U32> & U32) -> Walk:
+  (dst, +v) = r
+  walk.seen(v, off, dst, q, head, tail, Array.get(U32, seen, v))
+
+# the k edges from index i, in order
+def walk.scan(k: Nat, +i: U32, w: Walk) -> Walk:
+  match k:
+    case 0n:
+      w
+    case 1n+p:
+      Walk{off, dst, seen, q, head, tail} = w
+      walk.scan(p, U32.inc(i),
+        walk.edge(off, seen, q, head, tail, Array.get(U32, dst, i)))
+
+def walk.hi(+lo: U32, dst: Array<U32>, seen: Array<U32>, q: Array<U32>,
+            head: U32, tail: U32, r: Array<U32> & U32) -> Walk:
+  (off, hi) = r
+  walk.scan(U32.to_nat(U32.sub(hi, lo)), lo,
+    Walk{off, dst, seen, q, head, tail})
+
+def walk.lo(+u: U32, dst: Array<U32>, seen: Array<U32>, q: Array<U32>,
+            head: U32, tail: U32, r: Array<U32> & U32) -> Walk:
+  (off, +lo) = r
+  walk.hi(lo, dst, seen, q, head, tail, Array.get(U32, off, U32.inc(u)))
+
+def walk.node(off: Array<U32>, dst: Array<U32>, seen: Array<U32>, head: U32,
+              tail: U32, r: Array<U32> & U32) -> Walk:
+  (q, +u) = r
+  walk.lo(u, dst, seen, q, head, tail, Array.get(U32, off, u))
+
+def walk.more(w: Walk) -> Walk & Bool:
+  Walk{off, dst, seen, q, head, tail} = w
+  (Walk{off, dst, seen, q, head, tail}, U32.is_lt(head, tail))
+
+# one pop: the head node's edges, then whether the queue still holds a node
+def walk.pop(w: Walk) -> Walk & Bool:
+  Walk{off, dst, seen, q, head, tail} = w
+  walk.more(walk.node(off, dst, seen, U32.inc(head), tail,
+    Array.get(U32, q, head)))
+
+def walk.loop(f: Nat, r: Walk & Bool) -> Walk:
+  match f:
+    case 0n:
+      (w, more) = r
+      w
+    case 1n+p:
+      (w, more) = r
+      match more:
+        case False{}:
+          w
+        case True{}:
+          walk.loop(p, walk.pop(w))
+
+def walk(off: Array<U32>, dst: Array<U32>, seen: Array<U32>, q: Array<U32>,
+         roots: List<&2, U32>, mark: Bool, fuel: Nat) -> Walk:
+  walk.loop(fuel, walk.more(walk.seed(roots, mark, Walk{off, dst, seen, q, 0,
+    0})))
+
+# String walk
+# ===========
+
+type WalkStr is Type:
+  WalkStr{adj: Map<&2, List<&2, String>>, seen: Set(), front: List<&2, String>,
+          back: List<&2, String>, out: List<&2, String>}
+
+type Entry is Data:
+  Entry{node: String, targets: List<&2, String>}
+
+type Walked is Data:
+  Walked{done: Bool, order: List<&2, String>}
+
+def walk_str.adj(es: List<&2, Entry>,
+                 m: Map<&2, List<&2, String>>) -> Map<&2, List<&2, String>>:
+  match es:
+    case Nil{}:
+      m
+    case Con{e, t}:
+      Entry{k, vs} = e
+      walk_str.adj(t, Map.set(&2, List<&2, String>, m, k, vs))
+
+def walk_str.mark(roots: List<&2, String>, s: Set()) -> Set():
+  match roots:
+    case Nil{}:
+      s
+    case Con{v, t}:
+      walk_str.mark(t, Set.add(s, v))
+
+def walk_str.seed(mark: Bool, +roots: List<&2, String>) -> Set():
+  match mark:
+    case False{}:
+      Set.new()
+    case True{}:
+      walk_str.mark(roots, Set.new())
+
+def walk_str.push(+v: String, r: Set() & Bool, w: WalkStr) -> WalkStr:
+  (seen, had) = r
+  match had:
+    case True{}:
+      WalkStr{adj, s, front, back, out} = w
+      WalkStr{adj, seen, front, back, out}
+    case False{}:
+      WalkStr{adj, s, front, back, out} = w
+      WalkStr{adj, Set.add(seen, v), front, v <> back, v <> out}
+
+def walk_str.scan(vs: List<&2, String>, w: WalkStr) -> WalkStr:
+  match vs:
+    case Nil{}:
+      w
+    case Con{+v, t}:
+      WalkStr{adj, seen, front, back, out} = w
+      walk_str.scan(t, walk_str.push(v, Set.has(seen, v),
+        WalkStr{adj, Set.new(), front, back, out}))
+
+def walk_str.got(seen: Set(), front: List<&2, String>, back: List<&2, String>,
+                 out: List<&2, String>,
+                 r: Map<&2, List<&2, String>> & List<&2, String>) -> WalkStr:
+  (adj, vs) = r
+  walk_str.scan(vs, WalkStr{adj, seen, front, back, out})
+
+type Next is Data:
+  Next{u: String, front: List<&2, String>, back: List<&2, String>}
+
+def walk_str.head(xs: List<&2, String>) -> Maybe<&2, Next>:
+  match xs:
+    case Nil{}:
+      None{}
+    case Con{u, t}:
+      Some{Next{u, t, []}}
+
+# the next queued node: the front list, refilled from the back when empty
+def walk_str.next(front: List<&2, String>, back: List<&2, String>) ->
+  Maybe<&2, Next>:
+  match front:
+    case Con{u, t}:
+      Some{Next{u, t, back}}
+    case Nil{}:
+      walk_str.head(List.reverse(&2, String, back))
+
+def walk_str.step(n: Maybe<&2, Next>, w: WalkStr) -> WalkStr & Bool:
+  match n:
+    case None{}:
+      WalkStr{adj, seen, f, b, out} = w
+      (WalkStr{adj, seen, [], [], out}, False{})
+    case Some{nx}:
+      Next{+u, front, back} = nx
+      WalkStr{adj, seen, f, b, out} = w
+      (walk_str.got(seen, front, back, out,
+        Map.get(List<&2, String>, [], adj, u)), True{})
+
+def walk_str.pop(w: WalkStr) -> WalkStr & Bool:
+  WalkStr{adj, seen, front, back, out} = w
+  walk_str.step(walk_str.next(front, back), WalkStr{adj, seen, [], [], out})
+
+def walk_str.fin(done: Bool, w: WalkStr) -> Walked:
+  WalkStr{adj, seen, front, back, out} = w
+  Walked{done, List.reverse(&2, String, out)}
+
+def walk_str.loop(f: Nat, r: WalkStr & Bool) -> Walked:
+  match f:
+    case 0n:
+      (w, more) = r
+      walk_str.fin(Bool.not(more), w)
+    case 1n+p:
+      (w, more) = r
+      match more:
+        case False{}:
+          walk_str.fin(True{}, w)
+        case True{}:
+          walk_str.loop(p, walk_str.pop(w))
+
+def walk_str(es: List<&2, Entry>, +roots: List<&2, String>,
+             mark: Bool, fuel: Nat) -> Walked:
+  w : WalkStr = WalkStr{walk_str.adj(es, Map.new(&2, List<&2, String>)),
+    walk_str.seed(mark, roots), roots, [], []}
+  walk_str.loop(fuel, (w, True{}))

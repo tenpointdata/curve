@@ -45,6 +45,7 @@ allow("scripts/build.sh");
 allow(/^web\/(README\.md|package\.json|bun\.lock|[a-z_]+(\.test)?\.(ts|curve))$/);
 allow(/^demos\/web_react\/(App\.tsx|package\.json|bun\.lock)$/);
 allow(/^optimization\/(README\.md|[a-z_]+(\.test)?\.(ts|curve))$/);
+allow(/^graph\/(README\.md|[a-z_]+(\.test)?\.(ts|curve))$/);
 allow(/^optimization\/adapters\/[a-z_]+\.(ts|py)$/);
 allow("CHANGELOG.md");
 allow("README.md", 4000);
