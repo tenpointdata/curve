@@ -23,6 +23,7 @@ import type { BunPlugin } from "bun";
 import * as Curve from "./curve.ts";
 import * as Comp from "./comp.ts";
 import * as Safe from "./safe.ts";
+import * as Abi from "./abi.ts";
 import type { Trace } from "../optimization/proof_receipt.ts";
 
 // Main
@@ -42,7 +43,10 @@ const USAGE = [
   ["curve <file.curve> [args]", "check the file, then run main with args"],
   ["curve <file.curve> -o <out>", "build a binary, or C, JS, .mjs or CurveTT by extension"],
   ["curve <file.curve> --check-only", "check the file and its imports; run nothing"],
-  ["curve <file.curve> --verdict", "check it, then recheck it with the proven kernel"],
+  ["curve <file.curve> --verdict [-o <out.mjs>]", "check with the proven kernel before emitting"],
+  ["curve <file.curve> -o <out.mjs> --export <name>", "select a module export (repeatable)"],
+  ["curve <file.curve> -o <out.mjs> -o <out.d.mts>", "emit a guarded module and its declarations"],
+  ["  [--type <curve type>=<TS name>]", "name a declared datatype (repeatable)"],
   ["curve <file.curve> ... --receipt <r.json>", "record what was checked and built (curve receipt --help)"],
   ["curve <file.curve> --publish [<name>@<version>]", "publish the file and its imports; a name needs login"],
   ["curve link <name>@<version> 0x<hash>", "name a package already on the hub"],
@@ -267,6 +271,8 @@ function ver_newer(ver: string): boolean {
 // cli_file checks, runs, builds, publishes or bundles a file
 async function cli_file(args: string[]): Promise<void> {
   const outs: string[] = [];
+  const exports: string[] = [];
+  const types = new Map<string, string>();
   const argv: string[] = [];
   let file: string | undefined;
   let only = false;
@@ -275,7 +281,6 @@ async function cli_file(args: string[]): Promise<void> {
   let publish = false;
   let named: string | undefined;
   let receipt: string | undefined;
-  const select: string[] = [];
   for (let i = 0; i < args.length; i += 1) {
     const a = args[i];
     if (a === "--help" || a === "-h") {
@@ -293,13 +298,21 @@ async function cli_file(args: string[]): Promise<void> {
         named = args[i];
         named_parts(named);
       }
-    } else if (a === "--receipt" || a === "--export") {
-      i += 1;
-      const v = args[i] ?? cli_fail(a + " needs a value");
-      a === "--receipt" ? receipt = v : select.push(v);
+    } else if (a === "--receipt") {
+      receipt = args[++i] ?? cli_fail("--receipt needs a file");
     } else if (a === "-o") {
       i += 1;
       outs.push(args[i] ?? cli_fail("-o needs an output file"));
+    } else if (a === "--export") {
+      const name = args[++i];
+      if (!name || name.startsWith("-")) cli_fail("--export needs a definition name");
+      if (exports.includes(name)) cli_fail("duplicate --export " + name);
+      exports.push(name);
+    } else if (a === "--type") {
+      const m = /^([^=\s]+)=([^=\s]+)$/.exec(args[++i] ?? "");
+      if (m === null) cli_fail("--type needs <curve type>=<TypeScript name>");
+      if (types.has(m[1])) cli_fail("duplicate --type " + m[1]);
+      types.set(m[1], m[2]);
     } else if (a === "--") {
       argv.push(...args.splice(i + 1));
     } else if (a.startsWith("-")) {
@@ -321,8 +334,17 @@ async function cli_file(args: string[]): Promise<void> {
   if (publish && (outs.length !== 0 || only || verdict || checkup)) {
     cli_fail("--publish takes no other option");
   }
-  if (only && outs.length !== 0 || (only || verdict) && (checkup || only && verdict)) {
-    cli_fail((verdict ? "--verdict" : "--check-only") + " takes no other option");
+  const dts = outs.filter((o) => o.endsWith(".d.mts"));
+  const module = !file.endsWith(".html") && dts.length <= 1
+    && outs.filter((o) => o.endsWith(".mjs")).length === 1
+    && outs.length === dts.length + 1;
+  if (types.size !== 0 && dts.length === 0) cli_fail("--type requires a .d.mts output");
+  if (exports.length !== 0 && !module) cli_fail("--export requires one .mjs output");
+  if (only && (outs.length !== 0 || verdict || checkup)) {
+    cli_fail("--check-only takes no other option");
+  }
+  if (verdict && (checkup || (outs.length !== 0 && !module))) {
+    cli_fail("--verdict can only emit a single .mjs output (and its .d.mts)");
   }
   // args go to a plain run only: any option (all start with -) refuses them
   if (argv.length !== 0 && args.some((a) => a.startsWith("-") && a !== "--")) {
@@ -332,9 +354,9 @@ async function cli_file(args: string[]): Promise<void> {
     cli_fail("--checkup takes no -o: a binary holds one main, so build each"
       + " import alone");
   }
-  if (receipt !== undefined ? publish || checkup || !Curve.SOURCE_FILE.test(file)
-    || !(only || verdict || outs.length !== 0) : select.length !== 0) {
-    cli_fail("--receipt goes with --check-only, --verdict or -o; --export with --receipt");
+  if (receipt !== undefined && (publish || checkup || !Curve.SOURCE_FILE.test(file)
+    || !(only || verdict || outs.length !== 0))) {
+    cli_fail("--receipt goes with --check-only, --verdict or -o");
   }
   if (receipt !== undefined && (!receipt.endsWith(".json")
     || output_conflicts(receipt, new Set(outs.map(path_real))))) {
@@ -345,7 +367,7 @@ async function cli_file(args: string[]): Promise<void> {
     fs.rmSync(receipt, { force: true });
   }
   const seen = new Map<string, string | null>();
-  TRACE = receipt === undefined ? null : { version: VERSION + BUILD, file, select, seen,
+  TRACE = receipt === undefined ? null : { version: VERSION + BUILD, file, select: exports, seen,
     outs: [], stage: "check", mode: only ? "check" : outs.length === 0 ? "verdict"
       : verdict ? "verified_build" : "build" };
   try {
@@ -360,9 +382,9 @@ async function cli_file(args: string[]): Promise<void> {
     }
     const book = await book_read(file, undefined, seen);
     if (TRACE) TRACE.book = book;
-    if (only || verdict) {
+    if (only || (verdict && outs.length === 0)) {
       process.exitCode = cli_verdict(book, verdict);
-      if (outs.length === 0 || process.exitCode !== 0) return;
+      return;
     }
     if (outs.length === 0) {
       process.exitCode = book_run(book, [file, ...argv]);
@@ -372,7 +394,7 @@ async function cli_file(args: string[]): Promise<void> {
       t.$ === "Def" && t.i !== undefined ? t.i.map(path_real) : [])]);
     const outputs = new Map<string, string>();
     for (const out of outs) {
-      const binary = !/\.(mjs|c?js|c|curvett)$/.test(out);
+      const binary = !/\.(mjs|d\.mts|c?js|c|curvett)$/.test(out);
       const full = path.resolve(out);
       const at = path.join(path_real(path.dirname(full)), path.basename(full));
       for (const key of binary ? [at, at + ".gpu"] : [at]) {
@@ -391,9 +413,23 @@ async function cli_file(args: string[]): Promise<void> {
           + " directory");
       }
     }
+    if (verdict && cli_verdict(book, true) !== 0) {
+      process.exitCode = 1;
+      return;
+    }
     if (TRACE) TRACE.stage = "emit";
+    const picked = exports.length === 0 ? undefined : exports;
+    if (dts.length !== 0) {
+      // one book, one schema: both files or neither
+      const mjs = outs.find((o) => o.endsWith(".mjs"))!;
+      const abi = Abi.abi_module(book, picked, types, path.basename(file));
+      fs.writeFileSync(mjs, abi.mjs);
+      fs.writeFileSync(dts[0], abi.dts);
+      TRACE?.outs.push(mjs, dts[0]);
+      return;
+    }
     for (const out of outs) {
-      cli_emit(book, out);
+      cli_emit(book, out, picked);
       TRACE?.outs.push(out);
     }
   } catch (e) {
@@ -474,9 +510,9 @@ function output_conflicts(out: string, ins: Set<string>): boolean {
     || [...ins].some((input) => same_file(at, input))));
 }
 
-function cli_emit(book: Curve.Book, out: string): void {
+function cli_emit(book: Curve.Book, out: string, exports?: readonly string[]): void {
   if (out.endsWith(".mjs")) {
-    fs.writeFileSync(out, Comp.js_lib(book, true));
+    fs.writeFileSync(out, Comp.js_lib(book, true, exports));
   } else if (/\.c?js$/.test(out)) {
     fs.writeFileSync(out, Comp.js_book(book));
   } else if (out.endsWith(".c")) {

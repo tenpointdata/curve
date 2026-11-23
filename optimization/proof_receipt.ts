@@ -20,7 +20,7 @@ export type Result = "verified" | "checker_only" | "rejected" | "skipped" | "inf
 export type Engine = "curve-checker" | "curvett";
 export type Mode = "check" | "verdict" | "build" | "verified_build";
 export type Outcome = "pass" | "fail" | "skipped" | "error";
-export type ArtifactKind = "module" | "script" | "c" | "curvett" | "binary";
+export type ArtifactKind = "module" | "declarations" | "script" | "c" | "curvett" | "binary";
 
 export interface FileDigest {
   readonly path: string;
@@ -120,17 +120,19 @@ export function toolchain(version: string): Toolchain {
 
 export function artifactKind(out: string): ArtifactKind {
   const ext = extname(out);
-  return ext === ".mjs" ? "module" : ext === ".js" || ext === ".cjs" ? "script"
+  return out.endsWith(".d.mts") ? "declarations" : ext === ".mjs" ? "module" : ext === ".js" || ext === ".cjs" ? "script"
     : ext === ".c" ? "c" : ext === ".curvett" || ext === ".bendtt" ? "curvett" : "binary";
 }
 
-// the keys of a .mjs module's `export default {...}` (comp.ts js_lib)
+// the keys of a .mjs module's export block: comp.ts js_lib's
+// `export default {` or abi.ts's guarded `export default abi_bind(ABI, {`
 export function moduleExports(text: string): string[] {
-  const at = text.lastIndexOf("\nexport default {\n");
+  const at = Math.max(text.lastIndexOf("\nexport default {\n"),
+    text.lastIndexOf("\nexport default abi_bind(ABI, {\n"));
   if (at < 0) return [];
   const keys: string[] = [];
   for (const line of text.slice(at).split("\n")) {
-    const m = /^ {2}(\[?)("(?:[^"\\]|\\.)*")\]?: run_lib\(/.exec(line);
+    const m = /^ {2}(\[?)("(?:[^"\\]|\\.)*")\]?: /.exec(line);
     if (m !== null) keys.push(JSON.parse(m[2]) as string);
   }
   return keys.sort();
@@ -217,6 +219,10 @@ function verdictOf(t: Trace): Verdict {
   }
   const kernel: Check = t.kernel === null ? { engine: "curvett", outcome: "pass" } : kernelSkipped;
   const proven: Result = t.kernel === null ? "verified" : "checker_only";
+  // comp.ts js_lib refuses a selected export the book does not offer
+  if (infra && /^Not a module export: /.test(message(t.error))) {
+    return { checks: [checker, kernel], result: "rejected", reason: message(t.error), law: () => proven };
+  }
   if (infra) {
     return { checks: [checker, kernel], result: "infrastructure_failure", reason: message(t.error), law: () => proven };
   }

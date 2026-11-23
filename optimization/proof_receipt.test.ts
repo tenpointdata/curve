@@ -59,7 +59,8 @@ test.skipIf(!KERNEL)("a verified module build records its laws, exports and byte
   expect(got.sources).toEqual([]);
   expect(got.artifacts).toHaveLength(1);
   expect(got.artifacts[0]).toMatchObject({ path: "gate.mjs", kind: "module", bytes: readFileSync(out).length });
-  expect(got.artifacts[0].exports).toEqual([...LAWS, "rankable", "verdict"].sort());
+  // --export restricts the module to the selected definitions
+  expect(got.artifacts[0].exports).toEqual(["rankable", "verdict"]);
   expect(curve(["receipt", "verify", r]).status).toBe(0);
   const xml = curve(["receipt", "junit", r]);
   expect(xml.status).toBe(0);
@@ -161,7 +162,7 @@ test("human output and exit codes are unchanged without --receipt", () => {
     stdout: "ALL PROOFS CHECK\nUse --verdict for mathematical validity.\n", stderr: "" });
   expect(curve([study(MUTANT).gate, "--check-only"]).status).toBe(1);
   expect(curve([gate, "--check-only", "-o", join(dir, "x.mjs")]).status).toBe(1);
-  expect(curve([gate, "--export", "verdict", "-o", join(dir, "x.mjs")]).status).toBe(1);
+  expect(curve([gate, "--export", "verdict", "-o", join(dir, "x.c")]).status).toBe(1);
   expect(curve([gate, "--receipt", join(dir, "r.json")]).status).toBe(1);
   expect(existsSync(join(dir, "x.mjs"))).toBe(false);
 });
@@ -187,4 +188,17 @@ test("an entry that cannot be read is an infrastructure failure", () => {
   const got = receipt(r);
   expect(got.result).toBe("infrastructure_failure");
   expect(got.checks[0]).toMatchObject({ engine: "curve-checker", outcome: "error" });
+});
+
+test("a guarded module and its declarations are both recorded", () => {
+  const { dir, gate } = study();
+  const r = join(dir, "r.json");
+  const run = curve([gate, "-o", join(dir, "gate.mjs"), "-o", join(dir, "gate.d.mts"),
+    "--export", "verdict", "--receipt", r]);
+  expect(run.status).toBe(0);
+  const got = receipt(r);
+  expect(got.result).toBe("checker_only");
+  expect(got.artifacts.map((a) => [a.path, a.kind, a.exports])).toEqual([
+    ["gate.mjs", "module", ["verdict"]], ["gate.d.mts", "declarations", undefined]]);
+  expect(curve(["receipt", "verify", r]).status).toBe(0);
 });
