@@ -613,6 +613,11 @@ async function seen(file: string, want: LintRule["facts"]): Promise<Seen[]> {
   return got;
 }
 
+// Tests that spawn fresh bun processes, each loading the whole compiler, one
+// after another: well under a second when idle, but past bun's 5 s default
+// on a loaded or cold machine.
+const SPAWNS_MS = 60_000;
+
 // A GitHub that lists `tags` and serves this checkout's curve2 at any
 // release; it records the URLs it is asked for.
 function github(tags: string[]): { get: (url: string) => Promise<Response>; asked: string[] } {
@@ -836,7 +841,7 @@ def main() -> IO(Unit):
     const out = spawnSync(process.execPath, [script], { encoding: "utf8" });
     expect([out.status, out.stdout]).toEqual([0, "0\n"]);
     await expect(fetchCurve("../x", at, gh.get)).rejects.toThrow();
-  });
+  }, SPAWNS_MS);
 
   test("concurrent downloads keep an already returned checkout usable by its reader", async () => {
     const gh = github([]);
@@ -881,7 +886,7 @@ def main() -> IO(Unit):
       release();
       if (child.exitCode === null) child.kill();
     }
-  });
+  }, SPAWNS_MS);
 
   test("curveDir downloads only when no curve is given or around it", async () => {
     const saved = process.env.CURVE_DIR;
