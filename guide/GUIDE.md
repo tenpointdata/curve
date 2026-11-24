@@ -416,6 +416,13 @@ number. A value crosses without a copy: an `Array`
 argument is the caller's own array, updated in place, so copy it first if you
 keep it.
 
+To emit only specific definitions, pass `--export name` once per export.
+An imported definition uses its module name, for example `--export lib:score`.
+To verify the same program with CurveTT before writing the module, use
+`curve PROOF.curve --verdict -o module.mjs --export lib:score`.
+The verdict covers the full source and imports, including definitions the
+module does not export.
+
 ### Monads
 
 The `do` notation works for any monad, not just IO.

@@ -47,7 +47,8 @@ lines its run must print, and the gates run on the mini cluster.
                         config.yml, for Curve's GitHub project
     $SITE_REPO          optional registry and release service checkout, used
                         by the hosted ping and chart-generation gates
-    optimization/       constraint gate, evidence ledgers, scheduling and DARC adapters
+    optimization/       constraint gate, evidence ledgers, scheduling, DARC adapters
+                        and proof receipts (--receipt, curve receipt verify/junit)
 
 ## Curve language and optimization
 
