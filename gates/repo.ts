@@ -46,6 +46,7 @@ allow(/^toolchain\/(README\.md|curve-toolchain\.sh|manifests\/[a-z0-9.-]+\.toolc
 allow(/^web\/(README\.md|package\.json|bun\.lock|[a-z_]+(\.test)?\.(ts|curve))$/);
 allow(/^demos\/web_react\/(App\.tsx|package\.json|bun\.lock)$/);
 allow(/^optimization\/(README\.md|[a-z_]+(\.test)?\.(ts|curve))$/);
+allow(/^graph\/(README\.md|[a-z_]+(\.test)?\.(ts|curve))$/);
 allow(/^optimization\/adapters\/[a-z_]+\.(ts|py)$/);
 allow("CHANGELOG.md");
 allow("README.md", 4000);
@@ -57,6 +58,7 @@ allow("curve2/curve.ts", 48000);
 allow("curve2/comp.ts", 66000);
 allow("curve2/main.ts", 16000);
 allow("curve2/safe.ts", 24000);
+allow("curve2/abi.ts", 8000);
 allow("curve2/curvett.lean", 64000);
 allow(/^curve2\/effs\/[a-z0-9_]+\.(c|js)$/);
 allow(/^curve2\/pack\/(\.gitignore|package\.json|tsconfig\.json|bun\.lock)$/);

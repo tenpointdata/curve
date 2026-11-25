@@ -3081,15 +3081,20 @@ function host(A: HTerm | null, x: string, out: boolean): string {
     : k === "F32" && !out ? `Math.fround(${x})` : x;
 }
 
-// A module (the .curve loader, -o <out>.mjs) roots and exports each callable
-// def by book name: "lib:value" differs from a root "lib.value".
-export function js_lib(book: Curve.Book, mod = false): string {
+// Module export keys distinguish imported "lib:value" from root "lib.value".
+export function js_lib(book: Curve.Book, mod = false, exports?: readonly string[]): string {
   FL = file_new(book, true);
-  const outs = !mod ? null : [...new Set(FL.book.order)].filter((k) => {
+  const eligible = !mod ? null : [...new Set(book.order)].filter((k) => {
     const t = tld_of(k);
-    return done_live(t) && !t.b && t.x === 0 && io_base(FL.book, t.T) === null;
+    return done_live(t) && !t.b && t.x === 0 && io_base(book, t.T) === null;
   });
-  file_book(outs ?? ["main"]);
+  const missing = exports?.find((k) => !eligible?.includes(k));
+  if (missing !== undefined) {
+    FL = null!;
+    throw new Error("Not a module export: " + missing);
+  }
+  const outs = exports ?? eligible;
+  file_book(outs === null ? ["main"] : [...outs]);
   for (const [k, def] of done_defs(fun_runs)) {
     unit_emit(unit_new(k, () => js_def(k, def)));
   }
